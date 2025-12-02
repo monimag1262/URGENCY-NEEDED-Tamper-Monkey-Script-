@@ -5,8 +5,17 @@
 // @description  Display urgency popup for specific sites on work orders created today (detail page only)
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
-// @grant        none
-// @run-at       document-end
+// @updateURL    https://raw.githubusercontent.com/YOUR-USERNAME/your-repo-name/main/script.user.js
+// @downloadURL  https://raw.githubusercontent.com/YOUR-USERNAME/your-repo-name/main/script.user.js
+// @grant        GM.xmlHttpRequest
+// @grant        GM_xmlhttpRequest
+// @grant        GM.setValue
+// @grant        GM_setValue
+// @grant        GM.getValue
+// @grant        GM_getValue
+// @run-at       document-idle
+// @compatible   firefox
+// @compatible   chrome
 // ==/UserScript==
 
 (function() {
