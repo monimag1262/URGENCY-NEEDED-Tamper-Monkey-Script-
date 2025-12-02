@@ -14,19 +14,17 @@
 // @grant        GM.getValue
 // @grant        GM_getValue
 // @run-at       document-idle
-// @compatible   firefox
-// @compatible   chrome
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    // Configuration
+    // Configuration #                                                                                                        #ChangeThisToMatchTheNeededSitesCanUseAItoCreateCodeOfLongLis
     const URGENT_SITES = ['ACY9', 'TUS5', 'MDWA', 'SBD6', 'JFK8', 'MSP8', 'MSP1',
                           'AZAA', 'FSD1', 'TYS1', 'DCA1', 'HOU2', 'STL8', 'TUS2',
                           'OMA2', 'MCI9', 'DEN4', 'BDU5', 'MCI5','JAX3'];
 
-    const TARGET_DATE = '12/02/2025'; // Format: MM/DD/YYYY
+    const TARGET_DATE = '12/02/2025'; // Format: MM/DD/YYYY                                                                                #ChangeToMatchAppropiateDate
 
     let popupShown = false; // Prevent multiple popups
 
@@ -61,7 +59,7 @@
             }
         }
 
-        // Check for specific detail page elements
+        // Check for specific detail page elements                                                                                 #This is where it verifies if the work order is open
         if (document.querySelector('.css-86vfqe') ||
             document.querySelector('[class*="ServiceDetails"]') ||
             document.querySelector('div:contains("Equipment Overview")')) {
@@ -146,7 +144,7 @@
         `;
         document.head.appendChild(style);
 
-        // Popup content
+        // Popup content                                                                                                           #WHAT THE POP UP SAYS
         popup.innerHTML = `
             <h1 style="color: white; margin: 0 0 20px 0; font-size: 32px; font-weight: bold;">
                 ⚠️ URGENT ALERT ⚠️
