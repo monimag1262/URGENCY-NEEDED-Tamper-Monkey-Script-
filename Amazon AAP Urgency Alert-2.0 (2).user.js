@@ -5,8 +5,8 @@
 // @description  Display urgency popup for specific sites on work orders created today (detail page only)
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
-// @updateURL    https://raw.githubusercontent.com/YOUR-USERNAME/your-repo-name/main/script.user.js
-// @downloadURL  https://raw.githubusercontent.com/YOUR-USERNAME/your-repo-name/main/script.user.js
+// @updateURL    https://raw.githubusercontent.com/monimag/urgencyvalidating/main/script.user.js
+// @downloadURL  https://raw.githubusercontent.com/monimag/urgencyvalidating/main/script.user.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM_xmlhttpRequest
 // @grant        GM.setValue
