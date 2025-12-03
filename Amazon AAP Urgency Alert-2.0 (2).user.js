@@ -7,13 +7,6 @@
 // @match        https://aap-na.corp.amazon.com/*
 // @updateURL    https://raw.githubusercontent.com/monimag/urgencyvalidating/main/script.user.js
 // @downloadURL  https://raw.githubusercontent.com/monimag/urgencyvalidating/main/script.user.js
-// @grant        GM.xmlHttpRequest
-// @grant        GM_xmlhttpRequest
-// @grant        GM.setValue
-// @grant        GM_setValue
-// @grant        GM.getValue
-// @grant        GM_getValue
-// @run-at       document-idle
 // ==/UserScript==
 
 (function() {
