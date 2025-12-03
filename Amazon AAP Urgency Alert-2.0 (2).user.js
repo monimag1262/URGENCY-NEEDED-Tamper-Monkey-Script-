@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Amazon AAP Urgency Alert
 // @namespace    http://tampermonkey.net/
-// @version      3.0
+// @version      4.0
 // @description  Display urgency popup for specific sites on work orders (detail page only)
-// @author       monimag
+// @author       MONIMAG
 // @match        https://aap-na.corp.amazon.com/*
 // @updateURL    https://raw.githubusercontent.com/monimag/urgencyvalidating/main/script.user.js
 // @downloadURL  https://raw.githubusercontent.com/monimag/urgencyvalidating/main/script.user.js
