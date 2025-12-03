@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Amazon AAP Urgency Alert
 // @namespace    http://tampermonkey.net/
-// @version      2.0
-// @description  Display urgency popup for specific sites on work orders created today (detail page only)
+// @version      3.0
+// @description  Display urgency popup for specific sites on work orders (detail page only)
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
 // @updateURL    https://raw.githubusercontent.com/monimag/urgencyvalidating/main/script.user.js
@@ -19,25 +19,12 @@
 (function() {
     'use strict';
 
-    // Configuration #                                                                                                        #ChangeThisToMatchTheNeededSitesCanUseAItoCreateCodeOfLongLis
+    // Configuration - Just update this list as needed
     const URGENT_SITES = ['ACY9', 'TUS5', 'MDWA', 'SBD6', 'JFK8', 'MSP8', 'MSP1',
                           'AZAA', 'FSD1', 'TYS1', 'DCA1', 'HOU2', 'STL8', 'TUS2',
                           'OMA2', 'MCI9', 'DEN4', 'BDU5', 'MCI5','JAX3'];
 
-    const TARGET_DATE = '12/02/2025'; // Format: MM/DD/YYYY                                                                                #ChangeToMatchAppropiateDate
-
     let popupShown = false; // Prevent multiple popups
-
-    // Function to check if today matches target date
-    function isTodayTargetDate() {
-        const today = new Date();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const year = today.getFullYear();
-        const todayFormatted = `${month}/${day}/${year}`;
-
-        return todayFormatted === TARGET_DATE;
-    }
 
     // Function to check if we're on a detail page (not list view)
     function isDetailPage() {
@@ -59,7 +46,7 @@
             }
         }
 
-        // Check for specific detail page elements                                                                                 #This is where it verifies if the work order is open
+        // Check for specific detail page elements
         if (document.querySelector('.css-86vfqe') ||
             document.querySelector('[class*="ServiceDetails"]') ||
             document.querySelector('div:contains("Equipment Overview")')) {
@@ -98,6 +85,15 @@
         }
 
         return null;
+    }
+
+    // Function to get current date formatted                                                                                                                      
+    function getCurrentDate() {
+        const today = new Date();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const year = today.getFullYear();
+        return `${month}/${day}/${year}`;
     }
 
     // Function to create and show popup
@@ -144,7 +140,7 @@
         `;
         document.head.appendChild(style);
 
-        // Popup content                                                                                                           #WHAT THE POP UP SAYS
+        // Popup content
         popup.innerHTML = `
             <h1 style="color: white; margin: 0 0 20px 0; font-size: 32px; font-weight: bold;">
                 ⚠️ URGENT ALERT ⚠️
@@ -157,10 +153,10 @@
                     <strong>Site Code:</strong> ${siteCode}
                 </p>
                 <p style="color: #333; font-size: 16px; margin: 10px 0;">
-                    <strong>Created:</strong> ${TARGET_DATE}
+                    <strong>Checked:</strong> ${getCurrentDate()}
                 </p>
                 <p style="color: #cc0000; font-size: 18px; font-weight: bold; margin: 15px 0 0 0;">
-                    ⚡ TIRES ISSUES FOR THIS SITE NEED IMMEDIATE ACTION REQUIRED ⚡
+                    ⚡ TIRE ISSUES FOR THIS SITE NEED IMMEDIATE ACTION ⚡
                 </p>
             </div>
             <button id="urgency-close-btn" style="
@@ -181,7 +177,7 @@
         overlay.appendChild(popup);
         document.body.appendChild(overlay);
 
-        // Close button functionality - FIXED
+        // Close button functionality
         const closeBtn = overlay.querySelector('#urgency-close-btn');
         closeBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -216,12 +212,6 @@
     function checkAndShowPopup() {
         // Prevent multiple checks
         if (popupShown) return;
-
-        // Check if today is the target date
-        if (!isTodayTargetDate()) {
-            console.log('Not target date - urgency alert disabled');
-            return;
-        }
 
         // Check if we're on a detail page (not list view)
         if (!isDetailPage()) {
