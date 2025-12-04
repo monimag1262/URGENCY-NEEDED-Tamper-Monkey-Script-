@@ -5,6 +5,10 @@
 // @description  Popup alert for urgent minor repairs from specific sites
 // @match        https://aap-na.corp.amazon.com/*
 // @grant        none
+// @homepageURL  https://github.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-
+// @supportURL   https://github.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-/issues
+// @updateURL    https://raw.githubusercontent.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-/main/120-4-25
+// @downloadURL  https://raw.githubusercontent.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-/main/120-4-25
 // ==/UserScript==
 
 (function() {
