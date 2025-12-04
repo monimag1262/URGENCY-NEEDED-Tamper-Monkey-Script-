@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Popup alert for urgent minor repairs from specific sites
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
