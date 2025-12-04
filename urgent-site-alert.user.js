@@ -15,7 +15,7 @@
     'use strict';
 
     // Define urgent sites
-    const URGENT_SITES = ["STL5", "KCVG", "SAV4", "YVR2", "RFD2", "DFW7", "LGA9", "PSP1", "CLEA", "FROGS"];
+    const URGENT_SITES = ["STL5", "KCVG", "SAV4", "YVR2", "RFD2", "DFW7", "LGA9", "PSP1", "CLEA"];
     const MCO_PREFIX = "MCO";
     const CLE_PREFIX = "CLE";
 
