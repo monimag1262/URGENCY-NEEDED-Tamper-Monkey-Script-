@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Popup alert for urgent minor repairs from specific sites
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -15,7 +15,7 @@
     'use strict';
 
     // Define urgent sites
-    const URGENT_SITES = ["STL5", "KCVG", "SAV4", "YVR2", "RFD2", "DFW7", "LGA9", "PSP1", "CLEA"];
+    const URGENT_SITES = ["STL5", "KCVG", "SAV4", "YVR2", "RFD2", "DFW7", "LGA9", "PSP1", "CLEA", "PELEL"];
     const MCO_PREFIX = "MCO";
     const CLE_PREFIX = "CLE";
 
