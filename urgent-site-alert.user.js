@@ -22,8 +22,6 @@
 
     // Track if popup already shown for current work order
     let currentWorkOrderId = null;
-    let lastCheckedUrl = '';
-    let checkInterval = null;
 
     // Check if site code is urgent
     function isUrgentSite(siteCode) {
@@ -292,57 +290,38 @@
         };
     }
 
-    // Extract site code from Last Yard Location field
-    function extractSiteCodeFromYardLocation() {
-        const labels = document.querySelectorAll('dt, th, label, div, span, td');
-        for (let label of labels) {
-            const text = label.textContent.trim();
-            if (text === 'Last Yard Location' || text.includes('Yard Location')) {
-                let valueElement = label.nextElementSibling;
-                if (!valueElement) {
-                    valueElement = label.parentElement?.nextElementSibling;
-                }
-                if (!valueElement) {
-                    valueElement = label.closest('div')?.nextElementSibling;
-                }
-                
-                if (valueElement) {
-                    const valueText = valueElement.textContent;
-                    const match = valueText.match(/^([A-Z]{3,4}\d{1,2})\s*-/);
-                    if (match) {
-                        return match[1].toUpperCase();
-                    }
-                }
-            }
-        }
-        return null;
-    }
+    // Extract site code from element
+    function extractSiteCode(element) {
+        if (!element) return null;
 
-    // Scan entire page for site codes (aggressive check)
-    function scanPageForUrgentSite() {
-        // Check Last Yard Location first (most reliable)
-        const siteCode = extractSiteCodeFromYardLocation();
-        if (siteCode && isUrgentSite(siteCode)) {
-            return siteCode;
-        }
-
-        // Also check all text content for site codes
-        const allText = document.body.textContent;
+        const text = element.textContent || element.innerText || '';
+        
         const patterns = [
-            /\b(STL5|YVR2|RDF2|TPA1)\b/gi,
-            /\b(RDU\d{1,2})\b/gi,
-            /\b(MCO\d{1,2})\b/gi,
-            /\b(FTW\d{1,2})\b/gi,
-            /\b(BFI\d{1,2})\b/gi,
-            /\b(DCA\d{1,2})\b/gi
+            /\b([A-Z]{3,4}\d{1,2})\b/g,
+            /Site[:\s]+([A-Z]{3,4}\d{1,2})/gi,
+            /Location[:\s]+([A-Z]{3,4}\d{1,2})/gi,
+            /\b(RDU[A-Z0-9]*)\b/gi,
+            /\b(MCO[A-Z0-9]*)\b/gi,
+            /\b(FTW[A-Z0-9]*)\b/gi,
+            /\b(BFI[A-Z0-9]*)\b/gi,
+            /\b(DCA[A-Z0-9]*)\b/gi
         ];
 
         for (let pattern of patterns) {
-            const matches = [...allText.matchAll(pattern)];
+            const matches = [...text.matchAll(pattern)];
             for (let match of matches) {
-                const code = match[1].toUpperCase().trim();
-                if (isUrgentSite(code)) {
-                    return code;
+                const siteCode = match[1].toUpperCase().trim();
+                if (isUrgentSite(siteCode)) {
+                    return siteCode;
+                }
+            }
+        }
+
+        if (element.dataset) {
+            const attrs = ['site', 'siteCode', 'location', 'siteId'];
+            for (let attr of attrs) {
+                if (element.dataset[attr] && isUrgentSite(element.dataset[attr])) {
+                    return element.dataset[attr].toUpperCase();
                 }
             }
         }
@@ -350,9 +329,8 @@
         return null;
     }
 
-    // Check if work order is unassigned
-    function isUnassigned() {
-        const spans = document.querySelectorAll('span, div, td');
+    function isUnassigned(element) {
+        const spans = element.querySelectorAll('span');
         for (let span of spans) {
             if (span.textContent.trim() === 'Unassigned') {
                 return true;
@@ -361,66 +339,35 @@
         return false;
     }
 
-    // Main fast check function
-    function quickCheck() {
-        const currentUrl = window.location.href;
-        
-        // Check if we're on a work order page
-        if (!currentUrl.includes('/work-request/') && !currentUrl.includes('workOrderId=')) {
-            return;
-        }
+    function checkWorkOrder(element) {
+        if (!element || !element.querySelector) return;
 
-        // If URL changed, reset the check
-        if (currentUrl !== lastCheckedUrl) {
-            lastCheckedUrl = currentUrl;
-            currentWorkOrderId = null;
-        }
-
-        // Check if unassigned
-        if (!isUnassigned()) {
-            return;
-        }
-
-        // Scan for urgent site
-        const siteCode = scanPageForUrgentSite();
-        
-        if (siteCode && siteCode !== currentWorkOrderId) {
-            currentWorkOrderId = siteCode;
-            console.log('🚨 1P Threshold site detected:', siteCode);
-            showUrgentPopup(siteCode);
+        if (isUnassigned(element)) {
+            const siteCode = extractSiteCode(element);
             
-            // Stop interval once popup shown
-            if (checkInterval) {
-                clearInterval(checkInterval);
-                checkInterval = null;
+            if (siteCode && siteCode !== currentWorkOrderId) {
+                currentWorkOrderId = siteCode;
+                console.log('🚨 1P Threshold site detected:', siteCode);
+                showUrgentPopup(siteCode);
             }
         }
     }
 
-    // Aggressive checking on page load
-    function startAggressiveChecking() {
-        // Immediate check
-        quickCheck();
-        
-        // Check every 100ms for first 5 seconds
-        let checksPerformed = 0;
-        checkInterval = setInterval(() => {
-            quickCheck();
-            checksPerformed++;
-            
-            // After 50 checks (5 seconds), slow down
-            if (checksPerformed > 50) {
-                clearInterval(checkInterval);
-                // Then check every second
-                checkInterval = setInterval(quickCheck, 1000);
+    const observer = new MutationObserver((mutations) => {
+        for (let mutation of mutations) {
+            for (let node of mutation.addedNodes) {
+                if (node.nodeType === 1) {
+                    checkWorkOrder(node);
+                    
+                    const unassignedElements = node.querySelectorAll('span');
+                    for (let el of unassignedElements) {
+                        if (el.textContent.trim() === 'Unassigned') {
+                            let parent = el.closest('[class*="work"], [class*="order"], [class*="card"]') || el.parentElement;
+                            checkWorkOrder(parent);
+                        }
+                    }
+                }
             }
-        }, 100);
-    }
-
-    // Monitor for DOM changes (backup method)
-    const observer = new MutationObserver(() => {
-        if (!currentWorkOrderId) {
-            quickCheck();
         }
     });
 
@@ -429,26 +376,18 @@
         subtree: true
     });
 
-    // Monitor URL changes
-    let lastUrl = location.href;
-    new MutationObserver(() => {
-        const url = location.href;
-        if (url !== lastUrl) {
-            lastUrl = url;
-            currentWorkOrderId = null;
-            startAggressiveChecking();
-        }
-    }).observe(document, {subtree: true, childList: true});
-
-    // Click event listener (instant check)
-    document.addEventListener('click', () => {
-        setTimeout(quickCheck, 50); // Very fast check after click
+    document.addEventListener('click', (e) => {
+        setTimeout(() => {
+            let element = e.target;
+            for (let i = 0; i < 6; i++) {
+                if (element) {
+                    checkWorkOrder(element);
+                    element = element.parentElement;
+                }
+            }
+        }, 300);
     }, true);
 
-    // Start checking immediately
-    startAggressiveChecking();
-
-    console.log('✅ Amazon Relay 1P Threshold Alert (FAST) loaded successfully');
+    console.log('✅ Amazon Relay 1P Threshold Alert script loaded successfully');
     console.log('📊 Monitoring threshold sites: STL5, YVR2, RDF2, TPA1, RDU*, MCO*, FTW*, BFI*, DCA*');
-    console.log('⚡ Fast detection enabled - checks every 100ms initially');
 })();
