@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1                                                                                                                                                  #UPDATE THIS PART, IT WILL INITIATE THE UPDATE FOR OTHERS WHEN THEY PRESS THE AAP BUTTON 
+// @version      1.0.2                                                                                                                                                  #UPDATE THIS PART, IT WILL INITIATE THE UPDATE FOR OTHERS WHEN THEY PRESS THE AAP BUTTON 
 // @description  Popup alert for urgent minor repairs from specific sites
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -15,9 +15,12 @@
     'use strict';
 
     // Define urgent sites                                                                                                                                        #THIS ARE SITES THAT NEED TO BE URGENT TODAY
-    const URGENT_SITES = ["STL5", "KCVG", "SAV4", "YVR2", "RFD2", "DFW7", "LGA9", "PSP1", "CLEA"];   
+    const URGENT_SITES = ["STL5", "YVR2", "RFD2", "TPA1"];   
     const MCO_PREFIX = "MCO";
-    const CLE_PREFIX = "CLE";
+    const RDU_PREFIX = "RDU";
+    const FTW_PREFIX = "FTW";
+    const BFI_PREFIX = "BFI";
+    const DCA_PREFIX = "DCA";
 
     // Track if popup already shown for current work order
     let currentWorkOrderId = null;
@@ -121,7 +124,7 @@
 
             <div style="background-color: #d32f2f; color: white; padding: 18px; border-radius: 8px; margin: 20px 0; box-shadow: 0 4px 8px rgba(211, 47, 47, 0.3);">
                 <p style="margin: 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">
-                    ⚡ MINOR REPAIRS FROM THIS SITE<br>REQUIRE URGENT HANDLING TODAY! ⚡
+                    ⚡ SITE IS OVER 1P THRESHOLD TODAY<br>REQUIRED URGENT TODAY! ⚡
                 </p>
             </div>
 
@@ -143,7 +146,7 @@
                         color: #333;
                         box-sizing: border-box;
                         line-height: 1.5;
-                    " rows="2">Assigning URGENT as this issue is one that can quickly be fixed.</textarea>                                            
+                    " rows="2">Assiging URGENT as site it over 1p threshold today.</textarea>                                            
                     <button id="copyCommentBtn" style="
                         margin-top: 10px;
                         background-color: #2196F3;
@@ -386,5 +389,6 @@
     }, true);
 
     console.log('✅ Amazon Relay Urgent Site Alert script loaded successfully');
-    console.log('📋 Monitoring sites: STL5, KCVG, SAV4, YVR2, RFD2, DFW7, LGA9, PSP1, CLEA, MCO*, CLE*');
+    console.log('📋 Monitoring sites: STL5, YVR2, RDF2, RDU*, MCO*, FTW*, BFI*, DCA*, TPA1)
+');
 })();
