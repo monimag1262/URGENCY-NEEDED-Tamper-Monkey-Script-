@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3      #UPDATE THIS PART, IT WILL INITIATE THE UPDATE FOR OTHERS 
+// @version      1.0.1      #UPDATE THIS PART, IT WILL INITIATE THE UPDATE FOR OTHERS 
 // @description  Popup alert for urgent minor repairs from specific sites
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -14,8 +14,8 @@
 (function() {
     'use strict';
 
-    // Define urgent sites
-    const URGENT_SITES = ["STL5", "KCVG", "SAV4", "YVR2", "RFD2", "DFW7", "LGA9", "PSP1", "CLEA", "PSP1"];
+    // Define urgent sites                                                                                                                                        #THIS ARE SITES THAT NEED TO BE URGENT TODAY
+    const URGENT_SITES = ["STL5", "KCVG", "SAV4", "YVR2", "RFD2", "DFW7", "LGA9", "PSP1", "CLEA"];   
     const MCO_PREFIX = "MCO";
     const CLE_PREFIX = "CLE";
 
@@ -54,7 +54,7 @@
             animation: fadeIn 0.3s;
         `;
 
-        // Create popup box
+        // Create popup box                                                                                                                                                #146 is where you adjust the copied text.   114-117 ARE THE REASON WHY URGENCY IS NEEDED    191 IS WHERE THEY UNDERSTAND. PROCEED 
         const popup = document.createElement('div');
         popup.style.cssText = `
             background: linear-gradient(to bottom, #fff 0%, #f9f9f9 100%);
@@ -95,7 +95,7 @@
             </div>
 
             <h2 style="color: #ff9800; margin: 15px 0; font-size: 26px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
-                🚨 URGENT SITE ALERT 🚨
+                🚨 URGENCY NEEDED FOR THIS SITE 🚨
             </h2>
 
             <div style="background-color: #fff3cd; padding: 12px; border-radius: 8px; margin: 20px 0; border: 2px solid #ff9800;">
@@ -143,7 +143,7 @@
                         color: #333;
                         box-sizing: border-box;
                         line-height: 1.5;
-                    " rows="2">Assigning URGENT as this issue is one that can quickly be fixed.</textarea>
+                    " rows="2">Assigning URGENT as this issue is one that can quickly be fixed.</textarea>                                            
                     <button id="copyCommentBtn" style="
                         margin-top: 10px;
                         background-color: #2196F3;
@@ -188,7 +188,7 @@
                 transition: all 0.3s;
                 width: 100%;
             ">
-                ✓ I UNDERSTAND - PROCEED
+                ✓ I UNDERSTAND AND WILL ASSIGN URGENT - PROCEED
             </button>
         `;
 
@@ -361,7 +361,7 @@
                             checkWorkOrder(parent);
                         }
                     }
-                }
+                }URG
             }
         }
     });
