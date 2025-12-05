@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2                                                                                                                                              #UPDATE THIS PART, IT WILL INITIATE THE UPDATE FOR OTHERS WHEN THEY PRESS THE AAP BUTTON   
+// @version      1.0.1                                                                                                                                              #UPDATE THIS PART, IT WILL INITIATE THE UPDATE FOR OTHERS WHEN THEY PRESS THE AAP BUTTON   
 // @description  Popup alert for urgent minor repairs from specific sites
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -21,24 +21,25 @@
     // Site prefixes that require urgent handling
     const URGENT_PREFIXES = ["RDU", "MCO", "FTW", "BFI", "DCA"];
 
-    // Track shown popups
-    let shownPopups = new Set();
-    let lastUrl = '';
-    let checkTimer = null;
+    // Track if popup already shown for current work order
+    let Id = null;
 
     // Check if site code is urgent
     function isUrgentSite(siteCode) {
         if (!siteCode) return false;
         const upperSiteCode = siteCode.toUpperCase().trim();
         
+        // Must be exactly 4-5 characters (3-4 letters + 1-2 numbers)
         if (!/^[A-Z]{3,4}\d{1,2}$/.test(upperSiteCode)) {
             return false;
         }
         
+        // Check exact matches
         if (URGENT_SITES.includes(upperSiteCode)) {
             return true;
         }
         
+        // Check prefixes
         for (let prefix of URGENT_PREFIXES) {
             if (upperSiteCode.startsWith(prefix)) {
                 return true;
@@ -50,9 +51,11 @@
 
     // Create and display the urgent popup
     function showUrgentPopup(siteCode) {
+        // Remove existing popup if any
         const existingOverlay = document.getElementById('urgentSiteOverlay');
         if (existingOverlay) existingOverlay.remove();
 
+        // Create overlay
         const overlay = document.createElement('div');
         overlay.id = 'urgentSiteOverlay';
         overlay.style.cssText = `
@@ -69,6 +72,7 @@
             animation: fadeIn 0.3s;
         `;
 
+        // Create popup box
         const popup = document.createElement('div');
         popup.style.cssText = `
             background: linear-gradient(to bottom, #fff 0%, #f9f9f9 100%);
@@ -138,6 +142,7 @@
                 </p>
             </div>
 
+            <!-- Copy to Comments Section -->
             <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #2196F3;">
                 <p style="margin: 0 0 10px 0; font-weight: bold; font-size: 15px; color: #1976d2; text-align: left;">
                     📋 Copy To Comments:
@@ -207,6 +212,7 @@
         overlay.appendChild(popup);
         document.body.appendChild(overlay);
 
+        // Copy button functionality
         const copyBtn = document.getElementById('copyCommentBtn');
         const commentText = document.getElementById('urgentCommentText');
         const successMsg = document.getElementById('copySuccessMsg');
@@ -285,153 +291,104 @@
         };
     }
 
-    // ULTRA FAST: Scan entire page immediately
-    function scanPageNow() {
-        const currentUrl = window.location.href;
-        
-        // Only check work order pages
-        if (!currentUrl.includes('/work-request/') && !currentUrl.includes('workOrderId=')) {
-            return null;
-        }
+    // Extract site code from element
+    function extractSiteCode(element) {
+        if (!element) return null;
 
-        // Create unique key for this page
-        const pageKey = currentUrl + '_' + Date.now();
+        const text = element.textContent || element.innerText || '';
         
-        // Don't check same URL multiple times in short period
-        if (currentUrl === lastUrl && shownPopups.has(currentUrl)) {
-            return null;
-        }
-
-        // Get all text on page
-        const bodyText = document.body ? document.body.textContent : '';
-        
-        // Check if unassigned
-        if (!bodyText.includes('Unassigned')) {
-            return null;
-        }
-
-        // FAST: Check for site codes in all text
-        const allMatches = [
-            ...bodyText.matchAll(/\b(STL5|YVR2|RDF2|TPA1)\b/gi),
-            ...bodyText.matchAll(/\b(RDU\d{1,2})\b/gi),
-            ...bodyText.matchAll(/\b(MCO\d{1,2})\b/gi),
-            ...bodyText.matchAll(/\b(FTW\d{1,2})\b/gi),
-            ...bodyText.matchAll(/\b(BFI\d{1,2})\b/gi),
-            ...bodyText.matchAll(/\b(DCA\d{1,2})\b/gi)
+        const patterns = [
+            /\b([A-Z]{3,4}\d{1,2})\b/g,
+            /Site[:\s]+([A-Z]{3,4}\d{1,2})/gi,
+            /Location[:\s]+([A-Z]{3,4}\d{1,2})/gi,
+            /\b(RDU[A-Z0-9]*)\b/gi,
+            /\b(MCO[A-Z0-9]*)\b/gi,
+            /\b(FTW[A-Z0-9]*)\b/gi,
+            /\b(BFI[A-Z0-9]*)\b/gi,
+            /\b(DCA[A-Z0-9]*)\b/gi
         ];
 
-        for (let match of allMatches) {
-            const siteCode = match[1].toUpperCase().trim();
-            if (isUrgentSite(siteCode)) {
-                return siteCode;
+        for (let pattern of patterns) {
+            const matches = [...text.matchAll(pattern)];
+            for (let match of matches) {
+                const siteCode = match[1].toUpperCase().trim();
+                if (isUrgentSite(siteCode)) {
+                    return siteCode;
+                }
+            }
+        }
+
+        if (element.dataset) {
+            const attrs = ['site', 'siteCode', 'location', 'siteId'];
+            for (let attr of attrs) {
+                if (element.dataset[attr] && isUrgentSite(element.dataset[attr])) {
+                    return element.dataset[attr].toUpperCase();
+                }
             }
         }
 
         return null;
     }
 
-    // Main check function - INSTANT
-    function instantCheck() {
-        const siteCode = scanPageNow();
-        
-        if (siteCode) {
-            const currentUrl = window.location.href;
-            
-            // Only show once per URL
-            if (!shownPopups.has(currentUrl)) {
-                shownPopups.add(currentUrl);
-                lastUrl = currentUrl;
-                console.log('🚨 INSTANT 1P Threshold site detected:', siteCode);
-                showUrgentPopup(siteCode);
-                
-                // Clear the rapid checking timer
-                if (checkTimer) {
-                    clearInterval(checkTimer);
-                    checkTimer = null;
-                }
-                
+    function isUnassigned(element) {
+        const spans = element.querySelectorAll('span');
+        for (let span of spans) {
+            if (span.textContent.trim() === 'Unassigned') {
                 return true;
             }
         }
-        
         return false;
     }
 
-    // Aggressive rapid checking
-    function startRapidChecking() {
-        // Clear existing timer
-        if (checkTimer) {
-            clearInterval(checkTimer);
+    function checkWorkOrder(element) {
+        if (!element || !element.querySelector) return;
+
+        if (isUnassigned(element)) {
+            const siteCode = extractSiteCode(element);
+            
+            if (siteCode && siteCode !== currentWorkOrderId) {
+                currentWorkOrderId = siteCode;
+                console.log('🚨 1P Threshold site detected:', siteCode);
+                showUrgentPopup(siteCode);
+            }
         }
-        
-        // Immediate check
-        if (instantCheck()) return;
-        
-        // Check every 50ms for 3 seconds
-        let attempts = 0;
-        checkTimer = setInterval(() => {
-            attempts++;
-            
-            if (instantCheck()) {
-                clearInterval(checkTimer);
-                return;
+    }
+
+    const observer = new MutationObserver((mutations) => {
+        for (let mutation of mutations) {
+            for (let node of mutation.addedNodes) {
+                if (node.nodeType === 1) {
+                    checkWorkOrder(node);
+                    
+                    const unassignedElements = node.querySelectorAll('span');
+                    for (let el of unassignedElements) {
+                        if (el.textContent.trim() === 'Unassigned') {
+                            let parent = el.closest('[class*="work"], [class*="order"], [class*="card"]') || el.parentElement;
+                            checkWorkOrder(parent);
+                        }
+                    }
+                }
             }
-            
-            // After 60 attempts (3 seconds), slow down
-            if (attempts >= 60) {
-                clearInterval(checkTimer);
-                // Continue checking every 500ms
-                checkTimer = setInterval(instantCheck, 500);
-            }
-        }, 50);
-    }
-
-    // Monitor URL changes (for single-page apps)
-    function monitorUrlChanges() {
-        let previousUrl = location.href;
-        
-        const urlObserver = new MutationObserver(() => {
-            if (location.href !== previousUrl) {
-                previousUrl = location.href;
-                lastUrl = '';
-                console.log('🔄 URL changed, starting rapid check...');
-                startRapidChecking();
-            }
-        });
-        
-        urlObserver.observe(document.querySelector('body') || document.documentElement, {
-            childList: true,
-            subtree: true
-        });
-    }
-
-    // DOM ready handler
-    function onDOMReady() {
-        console.log('✅ Amazon Relay 1P Threshold Alert (INSTANT) loaded');
-        console.log('📊 Sites: STL5, YVR2, RDF2, TPA1, RDU*, MCO*, FTW*, BFI*, DCA*');
-        console.log('⚡ Ultra-fast mode: checks every 50ms');
-        
-        startRapidChecking();
-        monitorUrlChanges();
-    }
-
-    // Start immediately
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', onDOMReady);
-    } else {
-        onDOMReady();
-    }
-
-    // Also check on any click (instant response)
-    document.addEventListener('click', () => {
-        setTimeout(instantCheck, 10);
-    }, true);
-
-    // Check when page becomes visible
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            instantCheck();
         }
     });
 
-})();
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    document.addEventListener('click', (e) => {
+        setTimeout(() => {
+            let element = e.target;
+            for (let i = 0; i < 6; i++) {
+                if (element) {
+                    checkWorkOrder(element);
+                    element = element.parentElement;
+                }
+            }
+        }, 300);
+    }, true);
+
+    console.log('✅ Amazon Relay 1P Threshold Alert script loaded successfully');
+    console.log('📊 Monitoring threshold sites: STL5, YVR2, RDF2, TPA1, RDU*, MCO*, FTW*, BFI*, DCA*');
+})()
