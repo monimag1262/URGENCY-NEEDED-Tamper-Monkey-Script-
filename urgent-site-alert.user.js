@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2                                                                                                                                                  #UPDATE THIS PART, IT WILL INITIATE THE UPDATE FOR OTHERS WHEN THEY PRESS THE AAP BUTTON 
+// @version      1.0.3                                                                                                                                                #UPDATE THIS PART, IT WILL INITIATE THE UPDATE FOR OTHERS WHEN THEY PRESS THE AAP BUTTON 
 // @description  Popup alert for urgent minor repairs from specific sites
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -14,13 +14,11 @@
 (function() {
     'use strict';
 
-    // Define urgent sites                                                                                                                                        #THIS ARE SITES THAT NEED TO BE URGENT TODAY
-    const URGENT_SITES = ["STL5", "YVR2", "RFD2", "TPA1"];   
-    const MCO_PREFIX = "MCO";
-    const RDU_PREFIX = "RDU";
-    const FTW_PREFIX = "FTW";
-    const BFI_PREFIX = "BFI";
-    const DCA_PREFIX = "DCA";
+    // Define urgent sites - Sites over 1P threshold
+    const URGENT_SITES = ["STL5", "YVR2", "RDF2", "TPA1"];
+    
+    // Site prefixes that require urgent handling
+    const URGENT_PREFIXES = ["RDU", "MCO", "FTW", "BFI", "DCA"];
 
     // Track if popup already shown for current work order
     let currentWorkOrderId = null;
@@ -29,9 +27,25 @@
     function isUrgentSite(siteCode) {
         if (!siteCode) return false;
         const upperSiteCode = siteCode.toUpperCase().trim();
-        return URGENT_SITES.includes(upperSiteCode) ||
-               upperSiteCode.startsWith(MCO_PREFIX) ||
-               upperSiteCode.startsWith(CLE_PREFIX);
+        
+        // Must be exactly 4-5 characters (3-4 letters + 1-2 numbers)
+        if (!/^[A-Z]{3,4}\d{1,2}$/.test(upperSiteCode)) {
+            return false;
+        }
+        
+        // Check exact matches
+        if (URGENT_SITES.includes(upperSiteCode)) {
+            return true;
+        }
+        
+        // Check prefixes
+        for (let prefix of URGENT_PREFIXES) {
+            if (upperSiteCode.startsWith(prefix)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     // Create and display the urgent popup
@@ -57,7 +71,7 @@
             animation: fadeIn 0.3s;
         `;
 
-        // Create popup box                                                                                                                                                #146 is where you adjust the copied text.   114-117 ARE THE REASON WHY URGENCY IS NEEDED    191 IS WHERE THEY UNDERSTAND. PROCEED 
+        // Create popup box
         const popup = document.createElement('div');
         popup.style.cssText = `
             background: linear-gradient(to bottom, #fff 0%, #f9f9f9 100%);
@@ -96,35 +110,34 @@
                     <span style="font-size: 48px;">⚠️</span>
                 </div>
             </div>
-
+            
             <h2 style="color: #ff9800; margin: 15px 0; font-size: 26px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
-                🚨 URGENCY NEEDED FOR THIS SITE 🚨
+                🚨 1P THRESHOLD ALERT 🚨
             </h2>
-
+            
             <div style="background-color: #fff3cd; padding: 12px; border-radius: 8px; margin: 20px 0; border: 2px solid #ff9800;">
                 <p style="font-size: 20px; margin: 0; color: #333; font-weight: bold;">
                     Site Code: <span style="color: #ff9800; font-size: 24px;">${siteCode}</span>
                 </p>
             </div>
-
-            <div style="text-align: left; background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #ff9800;">
-                <p style="font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 15px 0; font-weight: 600;">
-                    ⚡ This work order is from a <span style="color: #d32f2f;">HIGH PRIORITY</span> site!
+            
+            <div style="text-align: center; background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #ff9800;">
+                <p style="font-size: 18px; line-height: 1.8; color: #333; margin: 0; font-weight: 600;">
+                    ⚡ This work order is from a <span style="color: #d32f2f;">CRITICAL PRIORITY</span> site!
                 </p>
-                <p style="font-size: 16px; line-height: 1.6; color: #555; margin: 10px 0;">
-                    <strong>Is this a MINOR REPAIR?</strong><br>
-                    <span style="color: #666; font-size: 15px;">
-                        ✓ Tires<br>
-                        ✓ Mudflaps<br>
-                        ✓ Lights<br>
-                        ✓ Any repair taking ~2 hours or less
-                    </span>
-                </p>
+                <div style="margin-top: 20px; padding: 15px; background-color: white; border-radius: 8px; border: 2px solid #ff9800;">
+                    <p style="font-size: 20px; font-weight: bold; color: #d32f2f; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                        📊 SITE IS OVER 1P THRESHOLD TODAY
+                    </p>
+                </div>
             </div>
-
-            <div style="background-color: #d32f2f; color: white; padding: 18px; border-radius: 8px; margin: 20px 0; box-shadow: 0 4px 8px rgba(211, 47, 47, 0.3);">
-                <p style="margin: 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">
-                    ⚡ SITE IS OVER 1P THRESHOLD TODAY<br>REQUIRED URGENT TODAY! ⚡
+            
+            <div style="background-color: #d32f2f; color: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 4px 8px rgba(211, 47, 47, 0.3);">
+                <p style="margin: 0; font-weight: bold; font-size: 17px; letter-spacing: 0.5px; line-height: 1.6;">
+                    ⚡ URGENT HANDLING REQUIRED ⚡<br>
+                    <span style="font-size: 15px; font-weight: normal; margin-top: 8px; display: block;">
+                        Priority assignment needed to meet site threshold targets
+                    </span>
                 </p>
             </div>
 
@@ -146,7 +159,7 @@
                         color: #333;
                         box-sizing: border-box;
                         line-height: 1.5;
-                    " rows="2">Assiging URGENT as site it over 1p threshold today.</textarea>                                            
+                    " rows="2">Urgency needed as site is over 1p THRESHOLD</textarea>
                     <button id="copyCommentBtn" style="
                         margin-top: 10px;
                         background-color: #2196F3;
@@ -174,7 +187,7 @@
                     </div>
                 </div>
             </div>
-
+            
             <button id="urgentAckBtn" style="
                 background-color: #ff9800;
                 color: white;
@@ -191,7 +204,7 @@
                 transition: all 0.3s;
                 width: 100%;
             ">
-                ✓ I UNDERSTAND AND WILL ASSIGN URGENT - PROCEED
+                ✓ I UNDERSTAND - PROCEED
             </button>
         `;
 
@@ -205,18 +218,15 @@
 
         copyBtn.onclick = () => {
             commentText.select();
-            commentText.setSelectionRange(0, 99999); // For mobile devices
-
-            // Try modern clipboard API first
+            commentText.setSelectionRange(0, 99999);
+            
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(commentText.value).then(() => {
                     showCopySuccess();
                 }).catch(() => {
-                    // Fallback to execCommand
                     fallbackCopy();
                 });
             } else {
-                // Fallback for older browsers
                 fallbackCopy();
             }
         };
@@ -234,9 +244,9 @@
             copyBtn.style.backgroundColor = '#4caf50';
             copyBtn.innerHTML = '✓ COPIED!';
             copyBtn.style.animation = 'copySuccess 0.5s';
-
+            
             successMsg.style.display = 'block';
-
+            
             setTimeout(() => {
                 copyBtn.style.backgroundColor = '#2196F3';
                 copyBtn.innerHTML = '📋 COPY TO CLIPBOARD';
@@ -244,7 +254,6 @@
             }, 2000);
         }
 
-        // Copy button hover effect
         copyBtn.onmouseover = () => {
             if (copyBtn.innerHTML.includes('COPY TO CLIPBOARD')) {
                 copyBtn.style.backgroundColor = '#1976d2';
@@ -258,7 +267,6 @@
             }
         };
 
-        // Acknowledge button interactions
         const ackBtn = document.getElementById('urgentAckBtn');
         ackBtn.onmouseover = () => {
             ackBtn.style.backgroundColor = '#e68900';
@@ -268,14 +276,12 @@
             ackBtn.style.backgroundColor = '#ff9800';
             ackBtn.style.transform = 'scale(1)';
         };
-
-        // Close popup
+        
         ackBtn.onclick = () => {
             overlay.style.animation = 'fadeIn 0.2s reverse';
             setTimeout(() => overlay.remove(), 200);
         };
 
-        // Also allow clicking overlay to close
         overlay.onclick = (e) => {
             if (e.target === overlay) {
                 overlay.style.animation = 'fadeIn 0.2s reverse';
@@ -289,14 +295,16 @@
         if (!element) return null;
 
         const text = element.textContent || element.innerText || '';
-
-        // Pattern matching for site codes
+        
         const patterns = [
             /\b([A-Z]{3,4}\d{1,2})\b/g,
             /Site[:\s]+([A-Z]{3,4}\d{1,2})/gi,
             /Location[:\s]+([A-Z]{3,4}\d{1,2})/gi,
+            /\b(RDU[A-Z0-9]*)\b/gi,
             /\b(MCO[A-Z0-9]*)\b/gi,
-            /\b(CLE[A-Z0-9]*)\b/gi
+            /\b(FTW[A-Z0-9]*)\b/gi,
+            /\b(BFI[A-Z0-9]*)\b/gi,
+            /\b(DCA[A-Z0-9]*)\b/gi
         ];
 
         for (let pattern of patterns) {
@@ -309,7 +317,6 @@
             }
         }
 
-        // Check data attributes
         if (element.dataset) {
             const attrs = ['site', 'siteCode', 'location', 'siteId'];
             for (let attr of attrs) {
@@ -322,7 +329,6 @@
         return null;
     }
 
-    // Check if work order is unassigned
     function isUnassigned(element) {
         const spans = element.querySelectorAll('span');
         for (let span of spans) {
@@ -333,30 +339,26 @@
         return false;
     }
 
-    // Main check function
     function checkWorkOrder(element) {
         if (!element || !element.querySelector) return;
 
-        // Check if unassigned
         if (isUnassigned(element)) {
             const siteCode = extractSiteCode(element);
-
+            
             if (siteCode && siteCode !== currentWorkOrderId) {
                 currentWorkOrderId = siteCode;
-                console.log('🚨 Urgent site detected:', siteCode);
+                console.log('🚨 1P Threshold site detected:', siteCode);
                 showUrgentPopup(siteCode);
             }
         }
     }
 
-    // Monitor for DOM changes
     const observer = new MutationObserver((mutations) => {
         for (let mutation of mutations) {
             for (let node of mutation.addedNodes) {
                 if (node.nodeType === 1) {
                     checkWorkOrder(node);
-
-                    // Check child elements
+                    
                     const unassignedElements = node.querySelectorAll('span');
                     for (let el of unassignedElements) {
                         if (el.textContent.trim() === 'Unassigned') {
@@ -364,18 +366,16 @@
                             checkWorkOrder(parent);
                         }
                     }
-                }URG
+                }
             }
         }
     });
 
-    // Start observing
     observer.observe(document.body, {
         childList: true,
         subtree: true
     });
 
-    // Click event listener
     document.addEventListener('click', (e) => {
         setTimeout(() => {
             let element = e.target;
@@ -388,7 +388,6 @@
         }, 300);
     }, true);
 
-    console.log('✅ Amazon Relay Urgent Site Alert script loaded successfully');
-    console.log('📋 Monitoring sites: STL5, YVR2, RDF2, RDU*, MCO*, FTW*, BFI*, DCA*, TPA1)
-');
+    console.log('✅ Amazon Relay 1P Threshold Alert script loaded successfully');
+    console.log('📊 Monitoring threshold sites: STL5, YVR2, RDF2, TPA1, RDU*, MCO*, FTW*, BFI*, DCA*');
 })();
