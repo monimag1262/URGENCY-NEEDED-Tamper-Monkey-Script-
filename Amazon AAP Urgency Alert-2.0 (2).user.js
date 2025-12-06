@@ -1,131 +1,266 @@
 // ==UserScript==
-// @name         Amazon AAP Urgency Alert
+// @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      4.0
-// @description  Display urgency popup for specific sites on work orders (detail page only)
-// @author       MONIMAG
+// @version      1.0.0
+// @description  Notificate for Urgency within Site and Reason (1P Threshold - Yard Capacity)
+// @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
-// @updateURL    https://raw.githubusercontent.com/monimag/urgencyvalidating/main/script.user.js
-// @downloadURL  https://raw.githubusercontent.com/monimag/urgencyvalidating/main/script.user.js
+// @icon         https://www.google.com/s2/favicons?domain=amazon.com
+// @updateURL    https://raw.githubusercontent.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-/main/urgent-site-alert.user.js
+// @downloadURL  https://raw.githubusercontent.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-/main/urgent-site-alert.user.js
+// @grant        none
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    // Configuration - Just update this list as needed
-    const URGENT_SITES = ['ACY9', 'TUS5', 'MDWA', 'SBD6', 'JFK8', 'MSP8', 'MSP1',
-                          'AZAA', 'FSD1', 'TYS1', 'DCA1', 'HOU2', 'STL8', 'TUS2',
-                          'OMA2', 'MCI9', 'DEN4', 'BDU5', 'MCI5','JAX3'];
+    // ============================================
+    // CONFIGURATION
+    // ============================================
+    const CONFIG = {
+        // Exact site code matches for 1P Threshold - Yard Capacity urgency
+        urgentSites: [
+            'STL5', 'YVR2', 'DFW7', 'IND1', 'LGB3', 'ACK1', 'RFD2', 'STL8', 'BHM1', 'CTL5', 'YXU1', 'MCI5', 'YYZ4', 'HNE1'
+        ],
+        // Prefix matches (e.g., 'BFI' matches BFI1, BFI2, BFIC, etc.)
+        urgentPrefixes: ['BFI', 'MCO', 'RDU', 'CLE', 'EWR', 'MOB'],
+        checkInterval: 500,
+        maxRetries: 20,
+        debug: true // Enable detailed logging
+    };
 
-    let popupShown = false; // Prevent multiple popups
-
-    // Function to check if we're on a detail page (not list view)
-    function isDetailPage() {
-        // Check for "Service Details" in the page title or heading
-        const pageTitle = document.title;
-        const headings = document.querySelectorAll('h1, h2, h3');
-
-        // Check title
-        if (pageTitle.includes('Service Details')) {
-            return true;
+    // ============================================
+    // LOGGING UTILITY
+    // ============================================
+    function log(message, data = null) {
+        if (CONFIG.debug) {
+            console.log(`[🚨 Urgent Alert] ${message}`, data || '');
         }
+    }
 
-        // Check headings
-        for (let heading of headings) {
-            if (heading.textContent.includes('Service Details') ||
-                heading.textContent.includes('Equipment Overview') ||
-                heading.textContent.includes('Service Overview')) {
-                return true;
+    // ============================================
+    // IMPROVED ELEMENT FINDERS
+    // ============================================
+
+    /**
+     * Find Last Yard Location using multiple strategies
+     */
+    function getLastYardLocation() {
+        log('Searching for Last Yard Location...');
+
+        // Strategy 1: Look for text "Last Yard Location" and get next element
+        const labels = Array.from(document.querySelectorAll('p, span, div, label'));
+        const locationLabel = labels.find(el =>
+            el.textContent.trim() === 'Last Yard Location'
+        );
+
+        if (locationLabel) {
+            // Try to find the value in the next sibling or parent's next sibling
+            let valueElement = locationLabel.nextElementSibling;
+            if (!valueElement) {
+                valueElement = locationLabel.parentElement?.nextElementSibling;
+            }
+            if (!valueElement) {
+                // Try finding within same parent
+                const parent = locationLabel.parentElement;
+                const allP = parent?.querySelectorAll('p');
+                if (allP && allP.length > 1) {
+                    valueElement = allP[1]; // Second p tag might be the value
+                }
+            }
+
+            if (valueElement) {
+                const text = valueElement.textContent.trim();
+                log('Found location via label strategy:', text);
+                return text;
             }
         }
 
-        // Check for specific detail page elements
-        if (document.querySelector('.css-86vfqe') ||
-            document.querySelector('[class*="ServiceDetails"]') ||
-            document.querySelector('div:contains("Equipment Overview")')) {
-            return true;
+        // Strategy 2: Look for site code pattern directly (e.g., DCA1 - DD138)
+        const allText = Array.from(document.querySelectorAll('p, span, div'));
+        const locationElement = allText.find(el => {
+            const text = el.textContent.trim();
+            return /^[A-Z]{3,4}\d*\s*-\s*[A-Z]{2}\d+/.test(text); // Matches "DCA1 - DD138" or "BFIC - DD138"
+        });
+
+        if (locationElement) {
+            const text = locationElement.textContent.trim();
+            log('Found location via pattern matching:', text);
+            return text;
         }
 
-        // Check URL pattern - detail pages usually have asset IDs
-        const url = window.location.href;
-        if (url.includes('/service/') || url.includes('/details/')) {
-            return true;
-        }
+        // Strategy 3: Look in Service Overview section specifically
+        const serviceOverview = Array.from(document.querySelectorAll('div')).find(el =>
+            el.textContent.includes('Last Yard Location')
+        );
 
-        return false;
-    }
-
-    // Function to check if page contains urgent site code
-    function checkForUrgentSite() {
-        // Look for the specific yard location element first
-        const yardLocationElements = document.querySelectorAll('.css-86vfqe, [mdn-text]');
-
-        for (let element of yardLocationElements) {
-            const text = element.textContent;
-            for (let site of URGENT_SITES) {
-                if (text.includes(site)) {
-                    return site;
+        if (serviceOverview) {
+            const paragraphs = serviceOverview.querySelectorAll('p');
+            for (let p of paragraphs) {
+                const text = p.textContent.trim();
+                if (/^[A-Z]{3,4}\d*/.test(text)) {
+                    log('Found location in Service Overview:', text);
+                    return text;
                 }
             }
         }
 
-        // Fallback to checking entire page
-        const pageText = document.body.innerText;
-        for (let site of URGENT_SITES) {
-            if (pageText.includes(site)) {
-                return site;
-            }
-        }
-
+        log('❌ Could not find Last Yard Location');
         return null;
     }
 
-    // Function to get current date formatted                                                                                                                      
-    function getCurrentDate() {
-        const today = new Date();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const year = today.getFullYear();
-        return `${month}/${day}/${year}`;
+    /**
+     * Check if current work order is unassigned
+     */
+    function isUnassignedWorkOrder() {
+        const allElements = document.querySelectorAll('span, p, div');
+        for (let el of allElements) {
+            if (el.textContent.trim() === 'Unassigned') {
+                log('✅ Work order is unassigned');
+                return true;
+            }
+        }
+        log('Work order is NOT unassigned');
+        return false;
     }
 
-    // Function to create and show popup
-    function showUrgencyPopup(siteCode) {
-        if (popupShown) return; // Prevent duplicate popups
-        popupShown = true;
+    // ============================================
+    // SITE DETECTION
+    // ============================================
 
-        // Create overlay
+    function extractSiteCode(locationText) {
+        if (!locationText) return null;
+        // Updated regex to handle both numeric and letter suffixes (STL5, BFIC, etc.)
+        const match = locationText.trim().match(/^([A-Z]{3,4}\d*[A-Z]?)/);
+        const code = match ? match[1] : null;
+        log('Extracted site code:', code);
+        return code;
+    }
+
+    function isUrgentSite(siteCode) {
+        if (!siteCode) return false;
+
+        // Check exact matches first
+        if (CONFIG.urgentSites.includes(siteCode)) {
+            log(`🚨 URGENT: Exact match found - ${siteCode}`);
+            return true;
+        }
+
+        // Check prefix matches
+        const matchedPrefix = CONFIG.urgentPrefixes.find(prefix =>
+            siteCode.startsWith(prefix)
+        );
+
+        if (matchedPrefix) {
+            log(`🚨 URGENT: Prefix match found - ${siteCode} starts with ${matchedPrefix}`);
+            return true;
+        }
+
+        log(`✅ Not urgent: ${siteCode}`);
+        return false;
+    }
+
+    // ============================================
+    // POPUP MODAL
+    // ============================================
+
+    function showUrgentPopup(siteCode) {
+        if (document.getElementById('urgent-site-modal')) {
+            log('Popup already displayed');
+            return;
+        }
+
+        log(`🚨 Showing popup for ${siteCode}`);
+
         const overlay = document.createElement('div');
-        overlay.id = 'urgency-overlay';
+        overlay.id = 'urgent-site-modal';
         overlay.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 999999;
+            background: rgba(0, 0, 0, 0.7);
             display: flex;
             justify-content: center;
             align-items: center;
+            z-index: 999999;
+            animation: fadeIn 0.2s ease-in;
         `;
 
-        // Create popup box
-        const popup = document.createElement('div');
-        popup.style.cssText = `
-            background-color: #ff4444;
-            border: 5px solid #cc0000;
-            border-radius: 15px;
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: white;
             padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             max-width: 500px;
+            width: 90%;
             text-align: center;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
-            animation: pulse 1s infinite;
+            animation: slideIn 0.3s ease-out;
         `;
 
-        // Add animation
+        modal.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <div style="
+                    width: 80px;
+                    height: 80px;
+                    margin: 0 auto 20px;
+                    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    animation: pulse 2s infinite;
+                ">
+                    <span style="font-size: 48px; color: white;">⚠️</span>
+                </div>
+                <h2 style="
+                    margin: 0 0 15px 0;
+                    color: #2c3e50;
+                    font-size: 24px;
+                    font-weight: 600;
+                ">URGENT WORK ORDER</h2>
+                <p style="
+                    margin: 0 0 10px 0;
+                    color: #e74c3c;
+                    font-size: 18px;
+                    font-weight: 600;
+                ">${siteCode} - 1P THRESHOLD - YARD CAPACITY</p>
+                <p style="
+                    margin: 0;
+                    color: #555;
+                    font-size: 14px;
+                    line-height: 1.6;
+                ">This site requires immediate attention. Make sure to comment the need of urgency.</p>
+            </div>
+            <button id="acknowledge-btn" style="
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 14px 40px;
+                font-size: 16px;
+                font-weight: 600;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.6)';"
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.4)';">
+                I Acknowledge and Understand
+            </button>
+        `;
+
         const style = document.createElement('style');
         style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideIn {
+                from { transform: translateY(-50px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
             @keyframes pulse {
                 0%, 100% { transform: scale(1); }
                 50% { transform: scale(1.05); }
@@ -133,113 +268,116 @@
         `;
         document.head.appendChild(style);
 
-        // Popup content
-        popup.innerHTML = `
-            <h1 style="color: white; margin: 0 0 20px 0; font-size: 32px; font-weight: bold;">
-                ⚠️ URGENT ALERT ⚠️
-            </h1>
-            <div style="background-color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                <p style="color: #cc0000; font-size: 20px; font-weight: bold; margin: 0 0 10px 0;">
-                    HIGH PRIORITY WORK ORDER
-                </p>
-                <p style="color: #333; font-size: 16px; margin: 10px 0;">
-                    <strong>Site Code:</strong> ${siteCode}
-                </p>
-                <p style="color: #333; font-size: 16px; margin: 10px 0;">
-                    <strong>Checked:</strong> ${getCurrentDate()}
-                </p>
-                <p style="color: #cc0000; font-size: 18px; font-weight: bold; margin: 15px 0 0 0;">
-                    ⚡ TIRE ISSUES FOR THIS SITE NEED IMMEDIATE ACTION ⚡
-                </p>
-            </div>
-            <button id="urgency-close-btn" style="
-                background-color: white;
-                color: #cc0000;
-                border: 3px solid white;
-                padding: 15px 40px;
-                font-size: 18px;
-                font-weight: bold;
-                border-radius: 8px;
-                cursor: pointer;
-                transition: all 0.3s;
-            ">
-                I UNDERSTAND - CLOSE
-            </button>
-        `;
-
-        overlay.appendChild(popup);
+        overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
-        // Close button functionality
-        const closeBtn = overlay.querySelector('#urgency-close-btn');
-        closeBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            overlay.remove();
-            console.log('Urgency popup closed');
+        document.getElementById('acknowledge-btn').addEventListener('click', () => {
+            overlay.style.animation = 'fadeIn 0.2s ease-out reverse';
+            setTimeout(() => overlay.remove(), 200);
         });
-
-        // Also allow clicking overlay background to close
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) {
-                overlay.remove();
-                console.log('Urgency popup closed (background click)');
-            }
-        });
-
-        // Hover effect for button
-        closeBtn.addEventListener('mouseenter', function() {
-            this.style.backgroundColor = '#cc0000';
-            this.style.color = 'white';
-        });
-
-        closeBtn.addEventListener('mouseleave', function() {
-            this.style.backgroundColor = 'white';
-            this.style.color = '#cc0000';
-        });
-
-        console.log('Urgency popup displayed for site:', siteCode);
     }
 
-    // Main execution
-    function checkAndShowPopup() {
-        // Prevent multiple checks
-        if (popupShown) return;
+    // ============================================
+    // MAIN DETECTION LOGIC
+    // ============================================
 
-        // Check if we're on a detail page (not list view)
-        if (!isDetailPage()) {
-            console.log('Not on detail page - urgency alert will not show');
+    let lastCheckedLocation = null;
+    let checkAttempts = 0;
+    let hasTriggered = false;
+
+    function checkForUrgentSite() {
+        log(`--- Check attempt ${checkAttempts + 1} ---`);
+
+        // Don't trigger multiple times for same page
+        if (hasTriggered) {
+            log('Already triggered for this work order');
             return;
         }
 
-        // Check for urgent site codes
-        const foundSite = checkForUrgentSite();
+        // Check if unassigned
+        if (!isUnassignedWorkOrder()) {
+            log('Not an unassigned work order, skipping');
+            return;
+        }
 
-        if (foundSite) {
-            console.log(`Urgent site detected on detail page: ${foundSite}`);
-            setTimeout(() => showUrgencyPopup(foundSite), 800);
-        } else {
-            console.log('No urgent site code found on this work order');
+        // Get location
+        const locationText = getLastYardLocation();
+        if (!locationText) {
+            checkAttempts++;
+            if (checkAttempts < CONFIG.maxRetries) {
+                log(`Retrying... (${checkAttempts}/${CONFIG.maxRetries})`);
+                setTimeout(checkForUrgentSite, CONFIG.checkInterval);
+            } else {
+                log('❌ Max retries reached, giving up');
+            }
+            return;
+        }
+
+        // Reset attempts
+        checkAttempts = 0;
+
+        // Avoid duplicate checks
+        if (locationText === lastCheckedLocation) {
+            log('Same location as last check, skipping');
+            return;
+        }
+        lastCheckedLocation = locationText;
+
+        // Extract and check site code
+        const siteCode = extractSiteCode(locationText);
+
+        if (isUrgentSite(siteCode)) {
+            log(`🚨🚨🚨 URGENT SITE DETECTED: ${siteCode} 🚨🚨🚨`);
+            hasTriggered = true;
+
+            // Show popup
+            setTimeout(() => showUrgentPopup(siteCode), 500);
         }
     }
 
-    // Run on page load
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function init() {
+        log('=== Script Initialized (v2.2.0) ===');
+        log('Urgent Sites (Exact Match):', CONFIG.urgentSites);
+        log('Urgent Prefixes:', CONFIG.urgentPrefixes);
+        log('Total Monitoring:', `${CONFIG.urgentSites.length} exact + ${CONFIG.urgentPrefixes.length} prefix patterns`);
+
+        // Initial check
+        setTimeout(checkForUrgentSite, 1000);
+
+        // Watch for DOM changes
+        const observer = new MutationObserver((mutations) => {
+            // Reset trigger flag when significant changes occur
+            const significantChange = mutations.some(m =>
+                m.addedNodes.length > 5 || m.removedNodes.length > 5
+            );
+
+            if (significantChange) {
+                log('Significant DOM change detected');
+                hasTriggered = false;
+                lastCheckedLocation = null;
+                checkAttempts = 0;
+            }
+
+            checkForUrgentSite();
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        log('MutationObserver active');
+    }
+
+    // Start when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', checkAndShowPopup);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        // Small delay to ensure page content is loaded
-        setTimeout(checkAndShowPopup, 1000);
+        init();
     }
-
-    // Monitor for navigation changes (for single-page apps)
-    let lastUrl = location.href;
-    new MutationObserver(() => {
-        const url = location.href;
-        if (url !== lastUrl) {
-            lastUrl = url;
-            popupShown = false; // Reset for new page
-            setTimeout(checkAndShowPopup, 1000);
-        }
-    }).observe(document, {subtree: true, childList: true});
 
 })();
