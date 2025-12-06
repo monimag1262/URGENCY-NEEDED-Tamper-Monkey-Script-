@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      2.2.0
-// @description  Notificate for Urgency within Site and Reason (1P Threshold)
+// @version      1.0.0
+// @description  Notificate for Urgency within Site and Reason (1P Threshold) (Yard Capacity)
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
 // @icon         https://www.google.com/s2/favicons?domain=amazon.com
