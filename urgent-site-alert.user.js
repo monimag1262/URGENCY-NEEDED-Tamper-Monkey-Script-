@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
-// @description  Notificate for Urgency within Site and Reason
+// @version      2.0.0
+// @description  Notificate for Urgency within Site and Reason (1P Threshold)
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
 // @icon         https://www.google.com/s2/favicons?domain=amazon.com
@@ -18,8 +18,13 @@
     // CONFIGURATION
     // ============================================
     const CONFIG = {
-        urgentSites: ['STL5', 'YVR2', 'RDF2', 'TPA1'],
-        urgentPrefixes: ['RDU', 'MCO', 'FTW', 'BFI', 'DCA'],
+        // Updated urgent sites list for 1P Threshold
+        urgentSites: [
+            'STL5', 'YVR2', 'DFW7', 'BFIC', 'IND1', 'MCOA', 
+            'LGB3', 'AKC1', 'RFD2', 'RDUA', 'CLEA', 'STL8', 
+            'EWRC', 'BHM1', 'CLT5', 'MOBA', 'YXU1', 'MCI5', 'YYZ4'
+        ],
+        urgentPrefixes: [], // No prefix matching needed for this configuration
         checkInterval: 500,
         maxRetries: 20,
         debug: true // Enable detailed logging
@@ -72,11 +77,11 @@
             }
         }
 
-        // Strategy 2: Look for DCA1 pattern directly (site code pattern)
+        // Strategy 2: Look for site code pattern directly (e.g., DCA1 - DD138)
         const allText = Array.from(document.querySelectorAll('p, span, div'));
         const locationElement = allText.find(el => {
             const text = el.textContent.trim();
-            return /^[A-Z]{3}\d+\s*-\s*[A-Z]{2}\d+/.test(text); // Matches "DCA1 - DD138"
+            return /^[A-Z]{3,4}\d*\s*-\s*[A-Z]{2}\d+/.test(text); // Matches "DCA1 - DD138" or "BFIC - DD138"
         });
 
         if (locationElement) {
@@ -94,7 +99,7 @@
             const paragraphs = serviceOverview.querySelectorAll('p');
             for (let p of paragraphs) {
                 const text = p.textContent.trim();
-                if (/^[A-Z]{3}\d+/.test(text)) {
+                if (/^[A-Z]{3,4}\d*/.test(text)) {
                     log('Found location in Service Overview:', text);
                     return text;
                 }
@@ -126,7 +131,8 @@
 
     function extractSiteCode(locationText) {
         if (!locationText) return null;
-        const match = locationText.trim().match(/^([A-Z0-9]+)/);
+        // Updated regex to handle both numeric and letter suffixes (STL5, BFIC, etc.)
+        const match = locationText.trim().match(/^([A-Z]{3,4}\d*[A-Z]?)/);
         const code = match ? match[1] : null;
         log('Extracted site code:', code);
         return code;
@@ -141,14 +147,16 @@
             return true;
         }
 
-        // Check prefix matches
-        const matchedPrefix = CONFIG.urgentPrefixes.find(prefix =>
-            siteCode.startsWith(prefix)
-        );
+        // Check prefix matches (if any configured)
+        if (CONFIG.urgentPrefixes.length > 0) {
+            const matchedPrefix = CONFIG.urgentPrefixes.find(prefix =>
+                siteCode.startsWith(prefix)
+            );
 
-        if (matchedPrefix) {
-            log(`🚨 URGENT: Prefix match found - ${siteCode} starts with ${matchedPrefix}`);
-            return true;
+            if (matchedPrefix) {
+                log(`🚨 URGENT: Prefix match found - ${siteCode} starts with ${matchedPrefix}`);
+                return true;
+            }
         }
 
         log(`✅ Not urgent: ${siteCode}`);
@@ -335,9 +343,9 @@
     // ============================================
 
     function init() {
-        log('=== Script Initialized ===');
+        log('=== Script Initialized (v2.0.0) ===');
         log('Urgent Sites:', CONFIG.urgentSites);
-        log('Urgent Prefixes:', CONFIG.urgentPrefixes);
+        log('Total Urgent Sites:', CONFIG.urgentSites.length);
 
         // Initial check
         setTimeout(checkForUrgentSite, 1000);
