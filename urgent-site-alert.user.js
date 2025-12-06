@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.2.0
 // @description  Notificate for Urgency within Site and Reason (1P Threshold)
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -18,13 +18,13 @@
     // CONFIGURATION
     // ============================================
     const CONFIG = {
-        // Updated urgent sites list for 1P Threshold
+        // Exact site code matches for 1P Threshold urgency
         urgentSites: [
-            'STL5', 'YVR2', 'DFW7', 'BFIC', 'IND1', 'MCOA', 
-            'LGB3', 'AKC1', 'RFD2', 'RDUA', 'CLEA', 'STL8', 
-            'EWRC', 'BHM1', 'CLT5', 'MOBA', 'YXU1', 'MCI5', 'YYZ4'
+            'STL5', 'YVR2', 'DFW7', 'IND1', 'LGB3', 'ACK1', 'RFD2', 'STL8',
+            'BHM1', 'CTL5', 'YXU1', 'MCI5', 'YYZ4'
         ],
-        urgentPrefixes: [], // No prefix matching needed for this configuration
+        // Prefix matches (e.g., 'BFI' matches BFI1, BFI2, BFIC, etc.)
+        urgentPrefixes: ['BFI', 'MCO', 'RDU', 'CLE', 'EWR', 'MOB'],
         checkInterval: 500,
         maxRetries: 20,
         debug: true // Enable detailed logging
@@ -141,22 +141,20 @@
     function isUrgentSite(siteCode) {
         if (!siteCode) return false;
 
-        // Check exact matches
+        // Check exact matches first
         if (CONFIG.urgentSites.includes(siteCode)) {
             log(`🚨 URGENT: Exact match found - ${siteCode}`);
             return true;
         }
 
-        // Check prefix matches (if any configured)
-        if (CONFIG.urgentPrefixes.length > 0) {
-            const matchedPrefix = CONFIG.urgentPrefixes.find(prefix =>
-                siteCode.startsWith(prefix)
-            );
+        // Check prefix matches
+        const matchedPrefix = CONFIG.urgentPrefixes.find(prefix =>
+            siteCode.startsWith(prefix)
+        );
 
-            if (matchedPrefix) {
-                log(`🚨 URGENT: Prefix match found - ${siteCode} starts with ${matchedPrefix}`);
-                return true;
-            }
+        if (matchedPrefix) {
+            log(`🚨 URGENT: Prefix match found - ${siteCode} starts with ${matchedPrefix}`);
+            return true;
         }
 
         log(`✅ Not urgent: ${siteCode}`);
@@ -343,9 +341,10 @@
     // ============================================
 
     function init() {
-        log('=== Script Initialized (v2.0.0) ===');
-        log('Urgent Sites:', CONFIG.urgentSites);
-        log('Total Urgent Sites:', CONFIG.urgentSites.length);
+        log('=== Script Initialized (v2.2.0) ===');
+        log('Urgent Sites (Exact Match):', CONFIG.urgentSites);
+        log('Urgent Prefixes:', CONFIG.urgentPrefixes);
+        log('Total Monitoring:', `${CONFIG.urgentSites.length} exact + ${CONFIG.urgentPrefixes.length} prefix patterns`);
 
         // Initial check
         setTimeout(checkForUrgentSite, 1000);
