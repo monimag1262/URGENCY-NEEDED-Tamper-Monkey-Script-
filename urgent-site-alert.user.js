@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3                                                                                                                                         #UPDATE THIS PART IT WILL INITIATE THE UPDATE FOR OTHERS WHEN THEY PRESS THE AAP BUTTON   
-// @description  Notificate for Urgency withing Site and Reason 
+// @version      1.0.4
+// @description  Notificate for Urgency within Site and Reason 
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
 // @icon         https://www.google.com/s2/favicons?domain=amazon.com
@@ -18,121 +18,240 @@
     // CONFIGURATION
     // ============================================
     const CONFIG = {
-        // Exact match sites
         urgentSites: ['STL5', 'YVR2', 'RDF2', 'TPA1'],
-
-        // Prefix match sites
         urgentPrefixes: ['RDU', 'MCO', 'FTW', 'BFI', 'DCA'],
-
-        // Comment to auto-fill
         urgentComment: 'Work Order is Urgent Due to Site being over 1P Threshold',
-
-        // Selectors
-        selectors: {
-            unassignedSpan: 'span:contains("Unassigned")',
-            lastYardLocation: 'p.css-86vfqe',
-            commentTextarea: 'textarea.css-hg5e51[placeholder="Enter Comments Here"]',
-            workOrderContainer: 'td.css-18tzy6q'
-        },
-
-        // Timing
-        checkInterval: 500, // ms between checks
-        maxRetries: 10 // Maximum attempts to find elements
+        checkInterval: 500,
+        maxRetries: 20,
+        debug: true // Enable detailed logging
     };
 
     // ============================================
-    // UTILITY FUNCTIONS
+    // LOGGING UTILITY
+    // ============================================
+    function log(message, data = null) {
+        if (CONFIG.debug) {
+            console.log(`[🚨 Urgent Alert] ${message}`, data || '');
+        }
+    }
+
+    // ============================================
+    // IMPROVED ELEMENT FINDERS
     // ============================================
 
     /**
-     * Extract site code from location text
-     * Example: "RDU1 - PS552 (ParkingSlip)" -> "RDU1"
+     * Find Last Yard Location using multiple strategies
      */
-    function extractSiteCode(locationText) {
-        if (!locationText) return null;
+    function getLastYardLocation() {
+        log('Searching for Last Yard Location...');
 
-        // Extract the site code (everything before the first space or dash)
-        const match = locationText.trim().match(/^([A-Z0-9]+)/);
-        return match ? match[1] : null;
+        // Strategy 1: Look for text "Last Yard Location" and get next element
+        const labels = Array.from(document.querySelectorAll('p, span, div, label'));
+        const locationLabel = labels.find(el => 
+            el.textContent.trim() === 'Last Yard Location'
+        );
+
+        if (locationLabel) {
+            // Try to find the value in the next sibling or parent's next sibling
+            let valueElement = locationLabel.nextElementSibling;
+            if (!valueElement) {
+                valueElement = locationLabel.parentElement?.nextElementSibling;
+            }
+            if (!valueElement) {
+                // Try finding within same parent
+                const parent = locationLabel.parentElement;
+                const allP = parent?.querySelectorAll('p');
+                if (allP && allP.length > 1) {
+                    valueElement = allP[1]; // Second p tag might be the value
+                }
+            }
+
+            if (valueElement) {
+                const text = valueElement.textContent.trim();
+                log('Found location via label strategy:', text);
+                return text;
+            }
+        }
+
+        // Strategy 2: Look for DCA1 pattern directly (site code pattern)
+        const allText = Array.from(document.querySelectorAll('p, span, div'));
+        const locationElement = allText.find(el => {
+            const text = el.textContent.trim();
+            return /^[A-Z]{3}\d+\s*-\s*[A-Z]{2}\d+/.test(text); // Matches "DCA1 - DD138"
+        });
+
+        if (locationElement) {
+            const text = locationElement.textContent.trim();
+            log('Found location via pattern matching:', text);
+            return text;
+        }
+
+        // Strategy 3: Look in Service Overview section specifically
+        const serviceOverview = Array.from(document.querySelectorAll('div')).find(el =>
+            el.textContent.includes('Last Yard Location')
+        );
+
+        if (serviceOverview) {
+            const paragraphs = serviceOverview.querySelectorAll('p');
+            for (let p of paragraphs) {
+                const text = p.textContent.trim();
+                if (/^[A-Z]{3}\d+/.test(text)) {
+                    log('Found location in Service Overview:', text);
+                    return text;
+                }
+            }
+        }
+
+        log('❌ Could not find Last Yard Location');
+        return null;
     }
 
     /**
-     * Check if site code is urgent
+     * Find comment textarea using multiple strategies
      */
-    function isUrgentSite(siteCode) {
-        if (!siteCode) return false;
+    function findCommentTextarea() {
+        log('Searching for comment textarea...');
 
-        // Check exact matches
-        if (CONFIG.urgentSites.includes(siteCode)) {
-            return true;
+        // Strategy 1: By placeholder text
+        let textarea = document.querySelector('textarea[placeholder*="Enter Comments"]');
+        if (textarea) {
+            log('✅ Found textarea by placeholder');
+            return textarea;
         }
 
-        // Check prefix matches
-        return CONFIG.urgentPrefixes.some(prefix => siteCode.startsWith(prefix));
+        // Strategy 2: By aria-label
+        textarea = document.querySelector('textarea[aria-label*="comment" i]');
+        if (textarea) {
+            log('✅ Found textarea by aria-label');
+            return textarea;
+        }
+
+        // Strategy 3: Find any textarea in the conversation/comment section
+        const conversationSection = document.querySelector('[class*="conversation" i], [class*="comment" i]');
+        if (conversationSection) {
+            textarea = conversationSection.querySelector('textarea');
+            if (textarea) {
+                log('✅ Found textarea in conversation section');
+                return textarea;
+            }
+        }
+
+        // Strategy 4: Just find the first visible textarea
+        const textareas = Array.from(document.querySelectorAll('textarea'));
+        textarea = textareas.find(ta => {
+            const rect = ta.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0; // Visible
+        });
+
+        if (textarea) {
+            log('✅ Found visible textarea');
+            return textarea;
+        }
+
+        log('❌ Could not find comment textarea');
+        return null;
     }
 
     /**
      * Check if current work order is unassigned
      */
     function isUnassignedWorkOrder() {
-        const unassignedElements = document.querySelectorAll('span');
-        for (let span of unassignedElements) {
-            if (span.textContent.trim() === 'Unassigned') {
+        const allElements = document.querySelectorAll('span, p, div');
+        for (let el of allElements) {
+            if (el.textContent.trim() === 'Unassigned') {
+                log('✅ Work order is unassigned');
                 return true;
             }
         }
+        log('Work order is NOT unassigned');
         return false;
     }
 
-    /**
-     * Get Last Yard Location text
-     */
-    function getLastYardLocation() {
-        const locationElement = document.querySelector(CONFIG.selectors.lastYardLocation);
-        return locationElement ? locationElement.textContent.trim() : null;
+    // ============================================
+    // SITE DETECTION
+    // ============================================
+
+    function extractSiteCode(locationText) {
+        if (!locationText) return null;
+        const match = locationText.trim().match(/^([A-Z0-9]+)/);
+        const code = match ? match[1] : null;
+        log('Extracted site code:', code);
+        return code;
     }
 
-    /**
-     * Auto-fill comment textarea
-     */
-    function fillComment() {
-        const textarea = document.querySelector(CONFIG.selectors.commentTextarea);
+    function isUrgentSite(siteCode) {
+        if (!siteCode) return false;
 
-        if (textarea) {
-            // Check if comment already exists
-            if (textarea.value.includes(CONFIG.urgentComment)) {
-                console.log('[Urgent Alert] Comment already filled');
-                return true;
-            }
-
-            // Fill the comment
-            textarea.value = CONFIG.urgentComment;
-
-            // Trigger input event to ensure React/Vue detects the change
-            textarea.dispatchEvent(new Event('input', { bubbles: true }));
-            textarea.dispatchEvent(new Event('change', { bubbles: true }));
-
-            console.log('[Urgent Alert] Comment auto-filled');
+        // Check exact matches
+        if (CONFIG.urgentSites.includes(siteCode)) {
+            log(`🚨 URGENT: Exact match found - ${siteCode}`);
             return true;
         }
 
+        // Check prefix matches
+        const matchedPrefix = CONFIG.urgentPrefixes.find(prefix => 
+            siteCode.startsWith(prefix)
+        );
+
+        if (matchedPrefix) {
+            log(`🚨 URGENT: Prefix match found - ${siteCode} starts with ${matchedPrefix}`);
+            return true;
+        }
+
+        log(`✅ Not urgent: ${siteCode}`);
         return false;
+    }
+
+    // ============================================
+    // COMMENT AUTO-FILL
+    // ============================================
+
+    function fillComment() {
+        const textarea = findCommentTextarea();
+
+        if (!textarea) {
+            log('❌ Cannot fill comment - textarea not found');
+            return false;
+        }
+
+        // Check if comment already exists
+        if (textarea.value.includes(CONFIG.urgentComment)) {
+            log('Comment already filled');
+            return true;
+        }
+
+        // Fill the comment
+        textarea.value = CONFIG.urgentComment;
+
+        // Trigger multiple events to ensure detection
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+        textarea.dispatchEvent(new Event('blur', { bubbles: true }));
+
+        // Also try setting via React if available
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLTextAreaElement.prototype,
+            'value'
+        ).set;
+        nativeInputValueSetter.call(textarea, CONFIG.urgentComment);
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+        log('✅ Comment auto-filled successfully');
+        return true;
     }
 
     // ============================================
     // POPUP MODAL
     // ============================================
 
-    /**
-     * Create and show urgent site popup
-     */
     function showUrgentPopup(siteCode) {
-        // Prevent duplicate popups
         if (document.getElementById('urgent-site-modal')) {
+            log('Popup already displayed');
             return;
         }
 
-        // Create modal overlay
+        log(`🚨 Showing popup for ${siteCode}`);
+
         const overlay = document.createElement('div');
         overlay.id = 'urgent-site-modal';
         overlay.style.cssText = `
@@ -149,7 +268,6 @@
             animation: fadeIn 0.2s ease-in;
         `;
 
-        // Create modal content
         const modal = document.createElement('div');
         modal.style.cssText = `
             background: white;
@@ -213,7 +331,6 @@
             </button>
         `;
 
-        // Add animations
         const style = document.createElement('style');
         style.textContent = `
             @keyframes fadeIn {
@@ -234,15 +351,10 @@
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
-        // Handle acknowledgment
         document.getElementById('acknowledge-btn').addEventListener('click', () => {
             overlay.style.animation = 'fadeIn 0.2s ease-out reverse';
-            setTimeout(() => {
-                overlay.remove();
-            }, 200);
+            setTimeout(() => overlay.remove(), 200);
         });
-
-        console.log(`[Urgent Alert] Popup displayed for site: ${siteCode}`);
     }
 
     // ============================================
@@ -251,10 +363,20 @@
 
     let lastCheckedLocation = null;
     let checkAttempts = 0;
+    let hasTriggered = false;
 
     function checkForUrgentSite() {
-        // Check if this is an unassigned work order
+        log(`--- Check attempt ${checkAttempts + 1} ---`);
+
+        // Don't trigger multiple times for same page
+        if (hasTriggered) {
+            log('Already triggered for this work order');
+            return;
+        }
+
+        // Check if unassigned
         if (!isUnassignedWorkOrder()) {
+            log('Not an unassigned work order, skipping');
             return;
         }
 
@@ -263,32 +385,36 @@
         if (!locationText) {
             checkAttempts++;
             if (checkAttempts < CONFIG.maxRetries) {
+                log(`Retrying... (${checkAttempts}/${CONFIG.maxRetries})`);
                 setTimeout(checkForUrgentSite, CONFIG.checkInterval);
+            } else {
+                log('❌ Max retries reached, giving up');
             }
             return;
         }
 
-        // Reset attempts counter
+        // Reset attempts
         checkAttempts = 0;
 
         // Avoid duplicate checks
         if (locationText === lastCheckedLocation) {
+            log('Same location as last check, skipping');
             return;
         }
         lastCheckedLocation = locationText;
 
         // Extract and check site code
         const siteCode = extractSiteCode(locationText);
-        console.log(`[Urgent Alert] Checking site: ${siteCode} from "${locationText}"`);
 
         if (isUrgentSite(siteCode)) {
-            console.log(`[Urgent Alert] URGENT SITE DETECTED: ${siteCode}`);
+            log(`🚨🚨🚨 URGENT SITE DETECTED: ${siteCode} 🚨🚨🚨`);
+            hasTriggered = true;
 
             // Fill comment first
-            fillComment();
+            setTimeout(() => fillComment(), 500);
 
             // Show popup
-            showUrgentPopup(siteCode);
+            setTimeout(() => showUrgentPopup(siteCode), 800);
         }
     }
 
@@ -297,29 +423,36 @@
     // ============================================
 
     function init() {
-        console.log('[Urgent Alert] Script initialized');
+        log('=== Script Initialized ===');
+        log('Urgent Sites:', CONFIG.urgentSites);
+        log('Urgent Prefixes:', CONFIG.urgentPrefixes);
 
         // Initial check
         setTimeout(checkForUrgentSite, 1000);
 
-        // Watch for DOM changes (when work orders are opened)
+        // Watch for DOM changes
         const observer = new MutationObserver((mutations) => {
-            // Check if relevant elements changed
-            for (let mutation of mutations) {
-                if (mutation.addedNodes.length > 0) {
-                    checkForUrgentSite();
-                    break;
-                }
+            // Reset trigger flag when significant changes occur
+            const significantChange = mutations.some(m => 
+                m.addedNodes.length > 5 || m.removedNodes.length > 5
+            );
+
+            if (significantChange) {
+                log('Significant DOM change detected');
+                hasTriggered = false;
+                lastCheckedLocation = null;
+                checkAttempts = 0;
             }
+
+            checkForUrgentSite();
         });
 
-        // Observe the entire document for changes
         observer.observe(document.body, {
             childList: true,
             subtree: true
         });
 
-        console.log('[Urgent Alert] MutationObserver active');
+        log('MutationObserver active');
     }
 
     // Start when DOM is ready
