@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Notificate for Urgency within Site and Reason 
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -312,7 +312,7 @@
                     color: #555;
                     font-size: 14px;
                     line-height: 1.6;
-                ">This site requires immediate attention. The comment section has been auto-filled with urgency notification.</p>
+                ">This site requires immediate attention. Make sure Urgency Comment is included.</p>
             </div>
             <button id="acknowledge-btn" style="
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -461,5 +461,23 @@
     } else {
         init();
     }
+
+    function appendComment(newText) {
+    const textarea = document.getElementById('my-input');
+
+    if (!textarea) return false;
+
+    // Add to existing text (with newline if there's already content)
+    const currentText = textarea.value;
+    textarea.value = currentText 
+        ? `${currentText}\n${newText}` 
+        : newText;
+
+    // Trigger events
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    textarea.dispatchEvent(new Event('change', { bubbles: true }));
+
+    return true;
+}
 
 })();
