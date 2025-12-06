@@ -9,7 +9,6 @@
 // @updateURL    https://raw.githubusercontent.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-/main/urgent-site-alert.user.js
 // @downloadURL  https://raw.githubusercontent.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-/main/urgent-site-alert.user.js
 // @grant        none
-// @run-at       document-start
 // ==/UserScript==
 
 (function() {
