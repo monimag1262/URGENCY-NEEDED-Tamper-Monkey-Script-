@@ -1,8 +1,8 @@
-// ==UserScript==
+/ ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
-// @description  Notificate for Urgency within Site and Reason (1P Threshold) (Yard Capacity)
+// @version      12.6.25
+// @description  Notificate for Urgency within Site and Reason (1P Threshold - Yard Capacity)
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
 // @icon         https://www.google.com/s2/favicons?domain=amazon.com
@@ -18,10 +18,9 @@
     // CONFIGURATION
     // ============================================
     const CONFIG = {
-        // Exact site code matches for 1P Threshold urgency
+        // Exact site code matches for 1P Threshold - Yard Capacity urgency
         urgentSites: [
-            'STL5', 'YVR2', 'DFW7', 'IND1', 'LGB3', 'ACK1', 'RFD2', 'STL8',
-            'BHM1', 'CTL5', 'YXU1', 'MCI5', 'YYZ4'
+            'STL5', 'YVR2', 'DFW7', 'IND1', 'LGB3', 'ACK1', 'RFD2', 'STL8', 'BHM1', 'CTL5', 'YXU1', 'MCI5', 'YYZ4', 'HNE1'
         ],
         // Prefix matches (e.g., 'BFI' matches BFI1, BFI2, BFIC, etc.)
         urgentPrefixes: ['BFI', 'MCO', 'RDU', 'CLE', 'EWR', 'MOB'],
@@ -227,7 +226,7 @@
                     color: #e74c3c;
                     font-size: 18px;
                     font-weight: 600;
-                ">${siteCode} - OVER 1P THRESHOLD</p>
+                ">${siteCode} - 1P THRESHOLD - YARD CAPACITY</p>
                 <p style="
                     margin: 0;
                     color: #555;
