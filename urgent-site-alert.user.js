@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0                                                                                                                                         #UPDATE THIS PART, IT WILL INITIATE THE UPDATE FOR OTHERS WHEN THEY PRESS THE AAP BUTTON   
+// @version      1.0.3                                                                                                                                         #UPDATE THIS PART IT WILL INITIATE THE UPDATE FOR OTHERS WHEN THEY PRESS THE AAP BUTTON   
 // @description  Notificate for Urgency withing Site and Reason 
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
