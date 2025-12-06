@@ -2,7 +2,7 @@
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
 // @version      1.2.0
-// @description  Notificate for Urgency within Site and Reason with Auto-Comment System
+// @description  Notificate for Urgency within Site and Reason
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
 // @icon         https://www.google.com/s2/favicons?domain=amazon.com
@@ -20,7 +20,6 @@
     const CONFIG = {
         urgentSites: ['STL5', 'YVR2', 'RDF2', 'TPA1'],
         urgentPrefixes: ['RDU', 'MCO', 'FTW', 'BFI', 'DCA'],
-        urgentComment: 'Work Order is Urgent Due to Site being over 1P Threshold',
         checkInterval: 500,
         maxRetries: 20,
         debug: true // Enable detailed logging
@@ -36,259 +35,33 @@
     }
 
     // ============================================
-    // AUTO-COMMENT SYSTEM CLASS
-    // ============================================
-    class AutoCommentSystem {
-        constructor() {
-            this.textareaSelector = '#my-input';
-            this.svgSelector = 'svg[width="24"][height="20"]';
-            this.maxWaitTime = 5000;
-            this.checkInterval = 100;
-            this.pendingComment = null;
-        }
-
-        init() {
-            this.attachSVGListener();
-            log('✅ Auto-comment system initialized');
-        }
-
-        attachSVGListener() {
-            document.addEventListener('click', (event) => {
-                const svg = event.target.closest(this.svgSelector);
-
-                if (svg) {
-                    log('🖱️ Comment icon clicked');
-                    this.handleCommentIconClick();
-                }
-            }, true);
-        }
-
-        handleCommentIconClick() {
-            if (this.pendingComment) {
-                this.waitForTextareaAndInsert(this.pendingComment);
-            }
-        }
-
-        setPendingComment(commentText) {
-            if (!commentText || typeof commentText !== 'string') {
-                log('❌ Invalid comment text');
-                return false;
-            }
-
-            this.pendingComment = commentText.trim();
-            log('📝 Comment queued:', this.pendingComment);
-            return true;
-        }
-
-        async waitForTextareaAndInsert(commentText) {
-            try {
-                const textarea = await this.waitForElement(this.textareaSelector);
-
-                if (textarea) {
-                    await this.delay(200);
-
-                    const result = this.insertComment(textarea, commentText);
-
-                    if (result.success) {
-                        log('✅', result.message);
-                        this.showNotification('Comment inserted successfully', 'success');
-                        this.pendingComment = null;
-                    } else {
-                        log('❌', result.message);
-                        this.showNotification(result.message, 'error');
-                    }
-                } else {
-                    log('❌ Textarea did not appear within timeout');
-                    this.showNotification('Comment box not found', 'error');
-                }
-            } catch (error) {
-                log('❌ Error in waitForTextareaAndInsert:', error);
-                this.showNotification('Failed to insert comment', 'error');
-            }
-        }
-
-        waitForElement(selector) {
-            return new Promise((resolve) => {
-                const existingElement = document.querySelector(selector);
-                if (existingElement) {
-                    resolve(existingElement);
-                    return;
-                }
-
-                let elapsedTime = 0;
-                const interval = setInterval(() => {
-                    const element = document.querySelector(selector);
-
-                    if (element) {
-                        clearInterval(interval);
-                        resolve(element);
-                    } else if (elapsedTime >= this.maxWaitTime) {
-                        clearInterval(interval);
-                        resolve(null);
-                    }
-
-                    elapsedTime += this.checkInterval;
-                }, this.checkInterval);
-            });
-        }
-
-        insertComment(textarea, commentText) {
-            try {
-                if (!textarea) {
-                    return {
-                        success: false,
-                        message: 'Textarea element not provided'
-                    };
-                }
-
-                textarea.value = commentText;
-                this.triggerInputEvents(textarea);
-                textarea.focus();
-
-                return {
-                    success: true,
-                    message: 'Comment inserted successfully'
-                };
-
-            } catch (error) {
-                log('Error inserting comment:', error);
-                return {
-                    success: false,
-                    message: `Error: ${error.message}`
-                };
-            }
-        }
-
-        triggerInputEvents(element) {
-            const inputEvent = new Event('input', {
-                bubbles: true,
-                cancelable: true
-            });
-            element.dispatchEvent(inputEvent);
-
-            const changeEvent = new Event('change', {
-                bubbles: true,
-                cancelable: true
-            });
-            element.dispatchEvent(changeEvent);
-
-            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                window.HTMLTextAreaElement.prototype,
-                'value'
-            ).set;
-
-            if (nativeInputValueSetter) {
-                nativeInputValueSetter.call(element, element.value);
-                element.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        }
-
-        delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        showNotification(message, type = 'success') {
-            const existing = document.querySelector('.auto-comment-notification');
-            if (existing) existing.remove();
-
-            const notification = document.createElement('div');
-            notification.className = 'auto-comment-notification';
-            notification.textContent = message;
-
-            const styles = {
-                position: 'fixed',
-                top: '20px',
-                right: '20px',
-                padding: '16px 24px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '500',
-                zIndex: '10000',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                animation: 'slideIn 0.3s ease-out',
-                backgroundColor: type === 'success' ? '#10b981' : '#ef4444',
-                color: '#ffffff'
-            };
-
-            Object.assign(notification.style, styles);
-
-            if (!document.querySelector('#auto-comment-styles')) {
-                const styleSheet = document.createElement('style');
-                styleSheet.id = 'auto-comment-styles';
-                styleSheet.textContent = `
-                    @keyframes slideIn {
-                        from {
-                            transform: translateX(400px);
-                            opacity: 0;
-                        }
-                        to {
-                            transform: translateX(0);
-                            opacity: 1;
-                        }
-                    }
-                `;
-                document.head.appendChild(styleSheet);
-            }
-
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.style.animation = 'slideIn 0.3s ease-out reverse';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-
-        async insertCommentNow(commentText) {
-            if (!commentText || typeof commentText !== 'string') {
-                log('❌ Invalid comment text');
-                this.showNotification('Invalid comment text', 'error');
-                return;
-            }
-
-            const textarea = document.querySelector(this.textareaSelector);
-
-            if (textarea) {
-                const result = this.insertComment(textarea, commentText);
-
-                if (result.success) {
-                    log('✅', result.message);
-                    this.showNotification('Comment inserted successfully', 'success');
-                } else {
-                    log('❌', result.message);
-                    this.showNotification(result.message, 'error');
-                }
-            } else {
-                log('📝 Comment box not open. Queuing for next icon click.');
-                this.setPendingComment(commentText);
-            }
-        }
-    }
-
-    // Initialize auto-comment system
-    const autoCommentSystem = new AutoCommentSystem();
-
-    // ============================================
     // IMPROVED ELEMENT FINDERS
     // ============================================
 
+    /**
+     * Find Last Yard Location using multiple strategies
+     */
     function getLastYardLocation() {
         log('Searching for Last Yard Location...');
 
+        // Strategy 1: Look for text "Last Yard Location" and get next element
         const labels = Array.from(document.querySelectorAll('p, span, div, label'));
         const locationLabel = labels.find(el =>
             el.textContent.trim() === 'Last Yard Location'
         );
 
         if (locationLabel) {
+            // Try to find the value in the next sibling or parent's next sibling
             let valueElement = locationLabel.nextElementSibling;
             if (!valueElement) {
                 valueElement = locationLabel.parentElement?.nextElementSibling;
             }
             if (!valueElement) {
+                // Try finding within same parent
                 const parent = locationLabel.parentElement;
                 const allP = parent?.querySelectorAll('p');
                 if (allP && allP.length > 1) {
-                    valueElement = allP[1];
+                    valueElement = allP[1]; // Second p tag might be the value
                 }
             }
 
@@ -299,10 +72,11 @@
             }
         }
 
+        // Strategy 2: Look for DCA1 pattern directly (site code pattern)
         const allText = Array.from(document.querySelectorAll('p, span, div'));
         const locationElement = allText.find(el => {
             const text = el.textContent.trim();
-            return /^[A-Z]{3}\d+\s*-\s*[A-Z]{2}\d+/.test(text);
+            return /^[A-Z]{3}\d+\s*-\s*[A-Z]{2}\d+/.test(text); // Matches "DCA1 - DD138"
         });
 
         if (locationElement) {
@@ -311,6 +85,7 @@
             return text;
         }
 
+        // Strategy 3: Look in Service Overview section specifically
         const serviceOverview = Array.from(document.querySelectorAll('div')).find(el =>
             el.textContent.includes('Last Yard Location')
         );
@@ -330,51 +105,9 @@
         return null;
     }
 
-    function findCommentTextarea() {
-        log('Searching for comment textarea...');
-
-        let textarea = document.querySelector('#my-input');
-        if (textarea) {
-            log('✅ Found textarea by ID');
-            return textarea;
-        }
-
-        textarea = document.querySelector('textarea[placeholder*="Enter Comments"]');
-        if (textarea) {
-            log('✅ Found textarea by placeholder');
-            return textarea;
-        }
-
-        textarea = document.querySelector('textarea[aria-label*="comment" i]');
-        if (textarea) {
-            log('✅ Found textarea by aria-label');
-            return textarea;
-        }
-
-        const conversationSection = document.querySelector('[class*="conversation" i], [class*="comment" i]');
-        if (conversationSection) {
-            textarea = conversationSection.querySelector('textarea');
-            if (textarea) {
-                log('✅ Found textarea in conversation section');
-                return textarea;
-            }
-        }
-
-        const textareas = Array.from(document.querySelectorAll('textarea'));
-        textarea = textareas.find(ta => {
-            const rect = ta.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
-        });
-
-        if (textarea) {
-            log('✅ Found visible textarea');
-            return textarea;
-        }
-
-        log('❌ Could not find comment textarea');
-        return null;
-    }
-
+    /**
+     * Check if current work order is unassigned
+     */
     function isUnassignedWorkOrder() {
         const allElements = document.querySelectorAll('span, p, div');
         for (let el of allElements) {
@@ -402,11 +135,13 @@
     function isUrgentSite(siteCode) {
         if (!siteCode) return false;
 
+        // Check exact matches
         if (CONFIG.urgentSites.includes(siteCode)) {
             log(`🚨 URGENT: Exact match found - ${siteCode}`);
             return true;
         }
 
+        // Check prefix matches
         const matchedPrefix = CONFIG.urgentPrefixes.find(prefix =>
             siteCode.startsWith(prefix)
         );
@@ -418,41 +153,6 @@
 
         log(`✅ Not urgent: ${siteCode}`);
         return false;
-    }
-
-    // ============================================
-    // COMMENT AUTO-FILL (Enhanced)
-    // ============================================
-
-    function fillComment() {
-        const textarea = findCommentTextarea();
-
-        if (!textarea) {
-            log('❌ Textarea not found, queuing comment for SVG click');
-            autoCommentSystem.setPendingComment(CONFIG.urgentComment);
-            return false;
-        }
-
-        if (textarea.value.includes(CONFIG.urgentComment)) {
-            log('Comment already filled');
-            return true;
-        }
-
-        textarea.value = CONFIG.urgentComment;
-
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        textarea.dispatchEvent(new Event('change', { bubbles: true }));
-        textarea.dispatchEvent(new Event('blur', { bubbles: true }));
-
-        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLTextAreaElement.prototype,
-            'value'
-        ).set;
-        nativeInputValueSetter.call(textarea, CONFIG.urgentComment);
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-
-        log('✅ Comment auto-filled successfully');
-        return true;
     }
 
     // ============================================
@@ -527,7 +227,7 @@
                     color: #555;
                     font-size: 14px;
                     line-height: 1.6;
-                ">This site requires immediate attention. The comment will be auto-filled when you open the comment section.</p>
+                ">This site requires immediate attention. Make sure to comment the need of urgency.</p>
             </div>
             <button id="acknowledge-btn" style="
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -583,16 +283,19 @@
     function checkForUrgentSite() {
         log(`--- Check attempt ${checkAttempts + 1} ---`);
 
+        // Don't trigger multiple times for same page
         if (hasTriggered) {
             log('Already triggered for this work order');
             return;
         }
 
+        // Check if unassigned
         if (!isUnassignedWorkOrder()) {
             log('Not an unassigned work order, skipping');
             return;
         }
 
+        // Get location
         const locationText = getLastYardLocation();
         if (!locationText) {
             checkAttempts++;
@@ -605,30 +308,25 @@
             return;
         }
 
+        // Reset attempts
         checkAttempts = 0;
 
+        // Avoid duplicate checks
         if (locationText === lastCheckedLocation) {
             log('Same location as last check, skipping');
             return;
         }
         lastCheckedLocation = locationText;
 
+        // Extract and check site code
         const siteCode = extractSiteCode(locationText);
 
         if (isUrgentSite(siteCode)) {
             log(`🚨🚨🚨 URGENT SITE DETECTED: ${siteCode} 🚨🚨🚨`);
             hasTriggered = true;
 
-            // Try to fill comment immediately
-            setTimeout(() => {
-                const filled = fillComment();
-                if (!filled) {
-                    log('📝 Comment queued - will auto-fill when comment icon is clicked');
-                }
-            }, 500);
-
             // Show popup
-            setTimeout(() => showUrgentPopup(siteCode), 800);
+            setTimeout(() => showUrgentPopup(siteCode), 500);
         }
     }
 
@@ -641,14 +339,12 @@
         log('Urgent Sites:', CONFIG.urgentSites);
         log('Urgent Prefixes:', CONFIG.urgentPrefixes);
 
-        // Initialize auto-comment system
-        autoCommentSystem.init();
-
         // Initial check
         setTimeout(checkForUrgentSite, 1000);
 
         // Watch for DOM changes
         const observer = new MutationObserver((mutations) => {
+            // Reset trigger flag when significant changes occur
             const significantChange = mutations.some(m =>
                 m.addedNodes.length > 5 || m.removedNodes.length > 5
             );
