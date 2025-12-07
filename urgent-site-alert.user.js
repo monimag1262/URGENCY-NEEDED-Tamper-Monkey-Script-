@@ -1,7 +1,7 @@
-/ ==UserScript==
+// ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      12.6.25
+// @version      12.6.24
 // @description  Notificate for Urgency within Site and Reason (1P Threshold - Yard Capacity)
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -48,48 +48,49 @@
     function getLastYardLocation() {
         log('Searching for Last Yard Location...');
 
-        // Strategy 1: Look for text "Last Yard Location" and get next element
+        // Strategy 1: Look for elements with class containing "css-" and text matching site pattern
+        const allElements = Array.from(document.querySelectorAll('p, span, div'));
+        
+        // Look for pattern like "HNE1 - PS534" or "DCA1 - DD138"
+        const locationElement = allElements.find(el => {
+            const text = el.textContent.trim();
+            // Match: 3-4 letters, optional digit/letter, space, dash, space, alphanumeric
+            return /^[A-Z]{3,4}[0-9A-Z]*\s*-\s*[A-Z0-9]+/.test(text);
+        });
+
+        if (locationElement) {
+            const text = locationElement.textContent.trim();
+            log('✅ Found location via pattern matching:', text);
+            return text;
+        }
+
+        // Strategy 2: Look for text "Last Yard Location" and get next element
         const labels = Array.from(document.querySelectorAll('p, span, div, label'));
         const locationLabel = labels.find(el =>
             el.textContent.trim() === 'Last Yard Location'
         );
 
         if (locationLabel) {
-            // Try to find the value in the next sibling or parent's next sibling
             let valueElement = locationLabel.nextElementSibling;
             if (!valueElement) {
                 valueElement = locationLabel.parentElement?.nextElementSibling;
             }
             if (!valueElement) {
-                // Try finding within same parent
                 const parent = locationLabel.parentElement;
                 const allP = parent?.querySelectorAll('p');
                 if (allP && allP.length > 1) {
-                    valueElement = allP[1]; // Second p tag might be the value
+                    valueElement = allP[1];
                 }
             }
 
             if (valueElement) {
                 const text = valueElement.textContent.trim();
-                log('Found location via label strategy:', text);
+                log('✅ Found location via label strategy:', text);
                 return text;
             }
         }
 
-        // Strategy 2: Look for site code pattern directly (e.g., DCA1 - DD138)
-        const allText = Array.from(document.querySelectorAll('p, span, div'));
-        const locationElement = allText.find(el => {
-            const text = el.textContent.trim();
-            return /^[A-Z]{3,4}\d*\s*-\s*[A-Z]{2}\d+/.test(text); // Matches "DCA1 - DD138" or "BFIC - DD138"
-        });
-
-        if (locationElement) {
-            const text = locationElement.textContent.trim();
-            log('Found location via pattern matching:', text);
-            return text;
-        }
-
-        // Strategy 3: Look in Service Overview section specifically
+        // Strategy 3: Look in Service Overview section
         const serviceOverview = Array.from(document.querySelectorAll('div')).find(el =>
             el.textContent.includes('Last Yard Location')
         );
@@ -98,8 +99,8 @@
             const paragraphs = serviceOverview.querySelectorAll('p');
             for (let p of paragraphs) {
                 const text = p.textContent.trim();
-                if (/^[A-Z]{3,4}\d*/.test(text)) {
-                    log('Found location in Service Overview:', text);
+                if (/^[A-Z]{3,4}[0-9A-Z]*/.test(text)) {
+                    log('✅ Found location in Service Overview:', text);
                     return text;
                 }
             }
@@ -130,8 +131,10 @@
 
     function extractSiteCode(locationText) {
         if (!locationText) return null;
-        // Updated regex to handle both numeric and letter suffixes (STL5, BFIC, etc.)
-        const match = locationText.trim().match(/^([A-Z]{3,4}\d*[A-Z]?)/);
+        
+        // Extract site code: 3-4 letters followed by optional digits/letters
+        // Examples: HNE1, BFIC, STL5, DCA1
+        const match = locationText.trim().match(/^([A-Z]{3,4}[0-9A-Z]*)/);
         const code = match ? match[1] : null;
         log('Extracted site code:', code);
         return code;
@@ -340,7 +343,7 @@
     // ============================================
 
     function init() {
-        log('=== Script Initialized (v2.2.0) ===');
+        log('=== Script Initialized (v12.6.25) ===');
         log('Urgent Sites (Exact Match):', CONFIG.urgentSites);
         log('Urgent Prefixes:', CONFIG.urgentPrefixes);
         log('Total Monitoring:', `${CONFIG.urgentSites.length} exact + ${CONFIG.urgentPrefixes.length} prefix patterns`);
