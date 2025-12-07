@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      12.7.25
+// @version      12.7.251
 // @description  Notificate for Urgency within Site and Reason (Site is over 1P damaged threshold! - Comment: Assigning urgent due to 1P Threshold, guided by Leadership.)
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -10,6 +10,7 @@
 // @downloadURL  https://raw.githubusercontent.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-/main/urgent-site-alert.user.js
 // @grant        none
 // ==/UserScript==
+
 
 (function() {
     'use strict';
@@ -20,10 +21,10 @@
     const CONFIG = {
         // Exact site code matches for Site is over 1P damaged threshold! - Comment: Assigning urgent due to 1P Threshold, guided by Leadership. urgency
         urgentSites: [
-            'ACY9', 'AUS3', 'AUS5', 'BDL4', 'FSD1', 'HGR6', 'HLO3', 'MCI9', 'MKC6', 'MSP8', 'OKC2', 'ONTB', 'ORF4', 'PSP3', 'SAT2', 'SBN1', 'TLH2', 'TUS5', 'TYS1'
+            'ACY9', 'AUS3', 'AUS5', 'BDL4', 'FSD1', 'HGR6', 'HLO3', 'MCI9', 'MKC6', 'MSP8', 'OKC2', 'ONTB', 'ORF4', 'PSP3', 'SAT2', 'SBN1', 'TLH2', 'TUS5', 'TYS1', 'TPA1'
         ],
         // Prefix matches (e.g., 'BFI' matches BFI1, BFI2, BFIC, etc.)
-        urgentPrefixes: [],
+        urgentPrefixes: ['RDU', 'MCO', 'FTW', 'BFI', 'DCA'],
         checkInterval: 500,
         maxRetries: 20,
         debug: true // Enable detailed logging
