@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      12.8.24
+// @version      12.7.24
 // @description  Ntification for urgency: If issue is: Tire, Electrical(lights, 7-way), or Mudflap when assigning, make work order 
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
