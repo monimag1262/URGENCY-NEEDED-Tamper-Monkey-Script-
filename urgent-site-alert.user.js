@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      12.8.26
+// @version      12.8.25
 // @description  Ntification for urgency: If issue is: Tire, Electrical(lights, 7-way), or Mudflap when assigning, make work order 
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -16,8 +16,8 @@
     'use strict';
 
     const CONFIG = {
-        urgentSites: [],
-        urgentPrefixes: ['ACY1', 'AZAA', 'ATL2', 'HGR6', 'FSD1', 'BDL4', 'MCO1', 'MCI9', 'HOUB', 'ONTB', 'OKC1', 'MGE5', 'SAT1', 'RDU1', 'ORD5', 'SBN1', 'SCK6', 'TUS5', 'TYS1', 'ACY9'],
+        urgentSites: ['ACY1', 'ATL2', 'ACY9', 'HGR6', 'BDL4', 'OKC1', 'ORD5', 'RDU1', 'SAT1', 'SBN1', 'SCK6', 'TUS5', 'TYS1', 'FSD1', 'MCI9', 'MCO1', 'MGE5'],
+        urgentPrefixes: ['AZA', 'HOU', 'ONT'],
         checkInterval: 500,
         maxRetries: 20,
         debug: true
@@ -374,4 +374,3 @@
     }
 
 })();
-
