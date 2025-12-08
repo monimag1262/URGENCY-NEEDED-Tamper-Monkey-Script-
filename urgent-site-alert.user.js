@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      12.8.25
+// @version      12.8.251
 // @description  Ntification for urgency: If issue is: Tire, Electrical(lights, 7-way), or Mudflap when assigning, make work order 
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -243,7 +243,7 @@
                 <div style="font-size: 32px; animation: rotateWarning 2s infinite; flex-shrink: 0;">⚠️</div>
                 <div style="flex: 1;">
                     <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 URGENT WORK ORDER - ACTION REQUIRED</div>
-                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">${siteCode} - IF ISSUE IS: TIRE, ELECTRICAL(LIGHTS, 7-WAY), OR MUDFLAP WHEN ASSIGNING, MAKE WORK ORDER URGENT, LEAVE COMMENT: SITE IS OVER 1P DAMAGED THRESHOLD, ASSIGNING URGENT. GUIDED BY LEADERSHIP.</div>
+                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">${siteCode} - IF ISSUE IS: TIRE, ELECTRICAL(LIGHTS, 7-WAY), OR MUDFLAP WHEN ASSIGNING, MAKE WORK ORDER URGENT. LEAVE COMMENT: SITE IS OVER 1P DAMAGED THRESHOLD, ASSIGNING URGENT. GUIDED BY LEADERSHIP.</div>
                     <div style="font-size: 13px; opacity: 0.95; line-height: 1.4;">This site requires immediate attention. <strong>Make sure to comment the need of urgency.</strong></div>
                 </div>
             </div>
