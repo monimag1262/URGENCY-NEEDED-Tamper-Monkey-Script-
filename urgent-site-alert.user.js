@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Amazon Relay Urgent Site Alert - 12/11/25
+// @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0
 // @description  In-place notification for urgency: 1P Threshold Site- If issue is: Tire, Electrical(lights, 7-way), or Mudflap when assigning, make work order urgent. Leave Comment: Guided by leadership to assign urgent if issue is a minor repair. 
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
