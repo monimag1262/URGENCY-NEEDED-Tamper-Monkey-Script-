@@ -242,7 +242,7 @@
                 <div style="font-size: 32px; animation: rotateWarning 2s infinite; flex-shrink: 0;">⚠️</div>
                 <div style="flex: 1;">
                     <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 URGENT WORK ORDER - ACTION REQUIRED</div>
-                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">${siteCode} - 1P THRESHOLD - YARD CAPACITY</div>
+                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">${siteCode} - 1P THRESHOLD SITE- IF TRAILER ISSUE IS: TIRE, ELECTRICAL(LIGHTS, 7-WAY), OR MUDFLAP WHEN ASSIGNING, MAKE WORK ORDER URGENT. LEAVE COMMENT: GUIDED BY LEADERSHIP TO ASSIGN URGENT IF ISSUE IS A MINOR REPAIR.</div>
                     <div style="font-size: 13px; opacity: 0.95; line-height: 1.4;">This site requires immediate attention. <strong>Make sure to comment the need of urgency.</strong></div>
                 </div>
             </div>
@@ -373,3 +373,4 @@
     }
 
 })();
+
