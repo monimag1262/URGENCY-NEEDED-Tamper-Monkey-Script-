@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      12.28.25
+// @version      12.28.27
 // @description  In-place notification for urgency: 1P Threshold Site- If issue is: Tire, Electrical(lights, 7-way), or Mudflap when assigning, make work order urgent. Leave Comment: Guided by leadership to assign urgent if issue is a minor repair. 
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -15,7 +15,7 @@
     'use strict';
 
     const CONFIG = {
-        urgentSites: ['BDU5', 'ATL6', 'ACY9', 'DTW3', 'CLT6', 'BWI5', 'MDT9', 'MCC1', 'JAX3', 'RFD4', 'PSP3', 'MSP7', 'TEB9', 'SDF8', 'RIC4', 'XCE1', 'TTN2', 'TMB8'],
+        urgentSites: ['ATL2', 'ACY9', 'ACY1', 'BDU5', 'AUS3', 'BDL4', 'MDT9', 'DCA1', 'BWI4', 'PSP3', 'PBI3', 'ONT5', 'STL8', 'RIC4', 'RDU1', 'TMB8', 'TLH2', 'TEB9', 'ZEWR', 'TUS5'],
         urgentPrefixes: [],
         checkInterval: 500,
         maxRetries: 20,
