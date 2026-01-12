@@ -2,7 +2,7 @@
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
 // @version      1.12.26
-// @description  In-place notification for urgency: 1P Threshold Site- If TRAILER issue is: Tire, Electrical(lights, 7-way), or Mudflap when assigning, make work order urgent. Leave Comment: Guided by leadership to assign urgent if issue is a minor repair. 
+// @description  In-place notification for urgency: 1P Threshold - Yard Capacity
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
 // @icon         https://www.google.com/s2/favicons?domain=amazon.com
@@ -15,7 +15,7 @@
     'use strict';
 
     const CONFIG = {
-        urgentSites: [],
+        urgentSites: ['ACY9, AUS2, AZA9, BWI4, DEN3, HEW4, HGR6, HSE1, HMD3, MCI5, MCI9, MDT5, MGE9, OAK5, RIC4, RNT9, SAT1, SAT3, TUS5, TYS1 XLX7'],
         urgentPrefixes: [],
         checkInterval: 500,
         maxRetries: 20,
