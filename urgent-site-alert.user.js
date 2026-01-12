@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.12.26
-// @description  In-place notification for urgency: 1P Threshold - Yard Capacity
+// @version      1.11.26
+// @description  In-place notification for urgency: 1P Threshold Site- If TRAILER issue is: Tire, Electrical(lights, 7-way), or Mudflap when assigning, make work order urgent. Leave Comment: Guided by leadership to assign urgent if issue is a minor repair. 
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
 // @icon         https://www.google.com/s2/favicons?domain=amazon.com
@@ -15,7 +15,7 @@
     'use strict';
 
     const CONFIG = {
-        urgentSites: ['ACY9, AUS2, AZA9, BWI4, DEN3, HEW4, HGR6, HSE1, HMD3, MCI5, MCI9, MDT5, MGE9, OAK5, RIC4, RNT9, SAT1, SAT3, TUS5, TYS1 XLX7'],
+        urgentSites: ['XLX7', 'TUS5', 'DEN5', 'HSE1', 'XLA3', 'ATL2', 'HEW4', 'HMW1', 'ACY9', 'FTW5', 'OMA2', 'QZZ1', 'JAX3', 'RNT9', 'SAT1', 'ATLB', 'SMF1', 'ONT5', 'MCI3', 'BWI4', 'HGR6', 'TLH2', 'ABE8', 'MDT5', 'FWA6', 'BWI5', 'HAT2', 'TMB8', 'SAT3', 'PNE5', 'RIC4', 'MDT9', 'MGE9', 'XMD2', 'MDW5', 'LGB5', 'MCI5', 'HLO3', 'AZA9', 'JFK8', 'OAK5', 'STL8', 'ORH3', 'DET6', 'PHL6', 'SBD6', 'LAS7', 'ZEWR', 'TPA1', 'SAT2', 'TEB9', 'TUL2', 'HIA1'],
         urgentPrefixes: [],
         checkInterval: 500,
         maxRetries: 20,
@@ -242,7 +242,7 @@
                 <div style="font-size: 32px; animation: rotateWarning 2s infinite; flex-shrink: 0;">⚠️</div>
                 <div style="flex: 1;">
                     <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 URGENT WORK ORDER - ACTION REQUIRED</div>
-                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">${siteCode} - 1P THRESHOLD - YARD CAPACITY</div>
+                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">${siteCode} - 1P THRESHOLD SITE- IF TRAILER ISSUE IS: TIRE, ELECTRICAL(LIGHTS, 7-WAY), OR MUDFLAP WHEN ASSIGNING, MAKE WORK ORDER URGENT. LEAVE COMMENT: GUIDED BY LEADERSHIP TO ASSIGN URGENT IF ISSUE IS A MINOR REPAIR.</div>
                     <div style="font-size: 13px; opacity: 0.95; line-height: 1.4;">This site requires immediate attention. <strong>Make sure to comment the need of urgency.</strong></div>
                 </div>
             </div>
