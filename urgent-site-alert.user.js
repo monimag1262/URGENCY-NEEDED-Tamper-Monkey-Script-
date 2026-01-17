@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.16.26
+// @version      1.17.26
 // @description  In-place notification for urgency: 1P Threshold - Yard Capacity
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -15,7 +15,7 @@
     'use strict';
 
     const CONFIG = {
-        urgentSites: ['ACY9', 'ATL2', 'BWI4', 'DEN3', 'DEN8', 'FSD1', 'FTW5', 'HGR5', 'HGR6', 'HSE1', 'JAX3', 'MCI3', 'MCI5', 'MSP8', 'OKC2', 'ONT5', 'ORD5', 'PHL6', 'RDU1', 'TTN2', 'TUS5', 'TYS1', 'XLA3', 'XMD2'],
+        urgentSites: ['TYS1', 'ONT5', 'TUS5', 'AUS2', 'FTW5', 'ACY9', 'DEN3', 'HGR6', 'ATL2', 'MCI5', 'DEN5', 'DCA1', 'BWI4', 'XLA3', 'ROC5', 'HSE1', 'TUS2', 'MCO5', 'PIT9', 'STL8', 'RNT9', 'MGE9', 'OMA2', 'HGR5', 'HLO3', 'BOS3', 'JFK8', 'SWF1', 'CHA2', 'ABE8', 'TTNA', 'SDF8', 'MSP8', 'PBI3', 'PAE2', 'HIA1', 'AZA5', 'MKC6', 'PHX7', 'OKC1', 'DEN8', 'TUL2', 'PDX7', 'MSP7', 'MDW5', 'MDT5', 'FAT2', 'MDT4', 'IGQ1', 'MCI3', 'SAN3'],
         urgentPrefixes: [],
         checkInterval: 500,
         maxRetries: 20,
@@ -242,7 +242,7 @@
                 <div style="font-size: 32px; animation: rotateWarning 2s infinite; flex-shrink: 0;">⚠️</div>
                 <div style="flex: 1;">
                     <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 URGENT WORK ORDER - ACTION REQUIRED</div>
-                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">${siteCode} - 1P THRESHOLD - YARD CAPACITY - LEAVE PROPER COMMENT</div>
+                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">${siteCode} - 1P THRESHOLD - YARD CAPACITY - PLEASE LEAVE COMMENT</div>
                     <div style="font-size: 13px; opacity: 0.95; line-height: 1.4;">This site requires immediate attention. <strong>Make sure to comment the need of urgency.</strong></div>
                 </div>
             </div>
