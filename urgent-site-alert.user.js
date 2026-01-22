@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.20.26
+// @version      1.22.26
 // @description  In-place notification for urgency: 1P Threshold - Yard Capacity
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -17,12 +17,17 @@
     'use strict';
 
     const CONFIG = {
-        urgentSites: ['ACY9', 'BDL4', 'BDU5', 'BWI5', 'DEN5', 'IGQ1', 'JAX3', 'JFK8', 'MDW5', 'MGE9', 'MSP8', 'ONT5', 'ORH3', 'PNE5', 'RNT9', 'SAT3', 'SBD6', 'TEB9', 'TMB8', 'TUS2', 'TUS5', 'TYS1', 'XLA3'],
-        urgentPrefixes: [],
-        checkInterval: 500,
-        maxRetries: 20,
-        debug: true
-    };
+    urgentSites: [
+        'ACY9', 'ATL2', 'AZA9', 'AZA5', 'BWI5', 'DCA1', 'DEN5', 'FTW5',
+        'HGR6', 'HIA1', 'HSE1', 'JFK8', 'MDT4', 'MGE9', 'MSP8', 'ONT5',
+        'ORH3', 'PNE5', 'QZZ1', 'ROC5', 'SBD6', 'TEB9', 'TMB8', 'TTN2',
+        'TUS2', 'TUS5', 'TYS1', 'XLA3', 'XMD2'
+    ],
+    urgentPrefixes: [], // Empty since we're using exact match
+    checkInterval: 500,
+    maxRetries: 20,
+    debug: true
+};
 
     function log(message, data = null) {
         if (CONFIG.debug) {
