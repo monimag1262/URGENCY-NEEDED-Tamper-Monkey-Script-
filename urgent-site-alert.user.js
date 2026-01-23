@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.23.26
+// @version      1.23.27
 // @description  In-place notification for urgency: 1P Threshold - Yard Capacity
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -15,7 +15,8 @@
     'use strict';
 
     const CONFIG = {
-        urgentSites: ['ACY9', 'ATL2', 'BDU5', 'BWI4', 'BWI5', 'FWA6', 'HGR6', 'HIA1', 'HLO3', 'ILG1', 'JAX3', 'JFK8', 'MDT4', 'MDW5', 'MGE9', 'MSP8', 'ONT5', 'ORH3', 'QZZ1', 'RIC4', 'ROC1', 'SAT3', 'SBD6', 'TEB9', 'TMB8', 'TUS5', 'TYS1', 'XLA3', 'XMD2'],        urgentPrefixes: [],
+        urgentSites: ['ACY9', 'ATL2', 'BDU5', 'BWI4', 'BWI5', 'FWA6', 'HGR6', 'HIA1', 'HLO3', 'ILG1', 'JAX3', 'JFK8', 'MDT4', 'MDW5', 'MGE9', 'MSP8', 'ONT5', 'ORH3', 'QZZ1', 'RIC4', 'ROC1', 'SAT3', 'SBD6', 'TEB9', 'TMB8', 'TUS5', 'TYS1', 'XLA3', 'XMD2'],
+        urgentPrefixes: [],
         checkInterval: 500,
         maxRetries: 20,
         debug: true
@@ -25,6 +26,24 @@
         if (CONFIG.debug) {
             console.log(`[🚨 Urgent Alert] ${message}`, data || '');
         }
+    }
+
+    function isTrailerPage() {
+        log('🔍 Checking if this is a Trailer page...');
+        const rows = document.querySelectorAll('tr.css-xlf10u');
+        for (let row of rows) {
+            const cells = row.querySelectorAll('th, td');
+            for (let i = 0; i < cells.length - 1; i++) {
+                const headerText = cells[i].textContent.trim();
+                const valueText = cells[i + 1].textContent.trim();
+                if (headerText === 'Asset Type' && valueText === 'Trailer') {
+                    log('✅ Confirmed: This is a Trailer page (found in table)');
+                    return true;
+                }
+            }
+        }
+        log('❌ Not a Trailer page');
+        return false;
     }
 
     function getLastYardLocation() {
@@ -201,6 +220,11 @@
             return;
         }
 
+        if (!isTrailerPage()) {
+            log('⚠️ Not a Trailer work order - skipping notification');
+            return;
+        }
+
         log(`🚨 Showing in-place notification for ${siteCode}`);
 
         const vendorRow = findVendorSection();
@@ -240,8 +264,8 @@
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div style="font-size: 32px; animation: rotateWarning 2s infinite; flex-shrink: 0;">⚠️</div>
                 <div style="flex: 1;">
-                    <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 URGENT WORK ORDER - ACTION REQUIRED</div>
-                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">${siteCode} - 1P THRESHOLD FOR TRAILERS ONLY - YARD CAPACITY</div>
+                    <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 URGENT TRAILER WORK ORDER - ACTION REQUIRED</div>
+                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">${siteCode} - 1P THRESHOLD - YARD CAPACITY</div>
                     <div style="font-size: 13px; opacity: 0.95; line-height: 1.4;">This site requires immediate attention. <strong>Make sure to comment the need of urgency.</strong></div>
                 </div>
             </div>
@@ -335,10 +359,11 @@
     }
 
     function init() {
-        log('=== Script Initialized (v12.6.26 - In-Place Notification) ===');
+        log('=== Script Initialized (v12.7.0 - Trailer Detection) ===');
         log('Urgent Sites (Exact Match):', CONFIG.urgentSites);
         log('Urgent Prefixes:', CONFIG.urgentPrefixes);
         log('Total Monitoring:', `${CONFIG.urgentSites.length} exact + ${CONFIG.urgentPrefixes.length} prefix patterns`);
+        log('⚠️ TRAILER WORK ORDERS ONLY');
 
         setTimeout(checkForUrgentSite, 1000);
 
