@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urgent Site Alert - Script Generator v2.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #888;
+            font-weight: 400;
+            margin-left: 5px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: border-color 0.3s;
+        }
+
+        textarea {
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .tag-input-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            min-height: 80px;
+            background: #fafafa;
+        }
+
+        .tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .tag-remove:hover {
+            opacity: 1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-info {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #0b7dda;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e68900;
+        }
+
+        .output-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .output-section.active {
+            display: block;
+        }
+
+        .output-box {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .success-message {
+            background: #4CAF50;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .quick-add {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .quick-add input {
+            flex: 1;
+        }
+
+        .quick-add button {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .quick-add button:hover {
+            background: #5568d3;
+        }
+
+        .bulk-paste-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 6px;
+            border: 2px dashed #667eea;
+        }
+
+        .bulk-paste-section textarea {
+            margin-top: 10px;
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 Urgent Site Alert - Script Generator</h1>
+            <p>Generate custom Tampermonkey scripts with in-place notifications</p>
+            <div class="version-badge">v2.1 - Bulk Paste + Trailer Detection</div>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <div class="section-title">
+                    <span class="icon">📍</span>
+                    <span>Exact Site Codes</span>
+                </div>
+                <label>
+                    Sites requiring exact match
+                    <span class="hint">(e.g., STL5, YVR2, DFW7, HNE1)</span>
+                </label>
+                <div class="quick-add">
+                    <input type="text" id="siteInput" placeholder="Enter site code (e.g., HNE1)" />
+                    <button onclick="addSite()">➕ Add Site</button>
+                </div>
+                
+                <div class="bulk-paste-section">
+                    <label>
+                        📋 Bulk Paste Sites
+                        <span class="hint">(Paste multiple sites, one per line)</span>
+                    </label>
+                    <textarea id="bulkSiteInput" placeholder="ACY9&#10;ATL2&#10;BDU5&#10;BWI4&#10;..."></textarea>
+                    <button class="btn-warning" style="margin-top: 10px; width: 100%;" onclick="bulkAddSites()">📥 Add All Sites</button>
+                </div>
+                
+                <div id="siteTags" class="tag-input-container"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <span class="icon">🔤</span>
+                    <span>Site Prefixes</span>
+                </div>
+                <label>
+                    Prefix patterns (matches any site starting with these)
+                    <span class="hint">(e.g., BFI matches BFI1, BFI2, BFIC)</span>
+                </label>
+                <div class="quick-add">
+                    <input type="text" id="prefixInput" placeholder="Enter prefix (e.g., BFI)" />
+                    <button onclick="addPrefix()">➕ Add Prefix</button>
+                </div>
+                
+                <div class="bulk-paste-section">
+                    <label>
+                        📋 Bulk Paste Prefixes
+                        <span class="hint">(Paste multiple prefixes, one per line)</span>
+                    </label>
+                    <textarea id="bulkPrefixInput" placeholder="BFI&#10;MCO&#10;RDU&#10;..."></textarea>
+                    <button class="btn-warning" style="margin-top: 10px; width: 100%;" onclick="bulkAddPrefixes()">📥 Add All Prefixes</button>
+                </div>
+                
+                <div id="prefixTags" class="tag-input-container"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <span class="icon">📝</span>
+                    <span>Urgency Reason</span>
+                </div>
+                <label>
+                    Why are these sites urgent?
+                    <span class="hint">(This appears in the notification banner)</span>
+                </label>
+                <input type="text" id="urgencyReason" placeholder="e.g., 1P Threshold, Yard Capacity, High Volume" value="1P Threshold - Yard Capacity" />
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="siteCount">0</div>
+                    <div class="stat-label">Exact Sites</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="prefixCount">0</div>
+                    <div class="stat-label">Prefixes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div class="stat-label">Total Monitoring</div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="generateScript()">✨ Generate Updated Script</button>
+                <button class="btn-secondary" onclick="clearAll()">🗑️ Clear All</button>
+            </div>
+
+            <div id="outputSection" class="output-section">
+                <div class="section-title">
+                    <span class="icon">📄</span>
+                    <span>Generated Script (Ready to Use)</span>
+                </div>
+                <div class="output-box" id="outputBox"></div>
+                <div class="button-group">
+                    <button class="btn-success" onclick="copyScript()">📋 Copy to Clipboard</button>
+                    <button class="btn-info" onclick="downloadScript()">💾 Download .user.js</button>
+                </div>
+                <div id="successMessage" class="success-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sites = [];
+        let prefixes = [];
+        let generatedScript = '';
+
+        function clearAll() {
+            sites = [];
+            prefixes = [];
+            document.getElementById('bulkSiteInput').value = '';
+            document.getElementById('bulkPrefixInput').value = '';
+            renderTags();
+            updateStats();
+        }
+
+        function renderTags() {
+            const siteContainer = document.getElementById('siteTags');
+            siteContainer.innerHTML = sites.map((site, index) => `
+                <div class="tag">
+                    <span>${site}</span>
+                    <span class="tag-remove" onclick="removeSite(${index})">✕</span>
+                </div>
+            `).join('');
+
+            const prefixContainer = document.getElementById('prefixTags');
+            prefixContainer.innerHTML = prefixes.map((prefix, index) => `
+                <div class="tag">
+                    <span>${prefix}</span>
+                    <span class="tag-remove" onclick="removePrefix(${index})">✕</span>
+                </div>
+            `).join('');
+        }
+
+        function addSite() {
+            const input = document.getElementById('siteInput');
+            const value = input.value.trim().toUpperCase();
+            if (value && !sites.includes(value)) {
+                sites.push(value);
+                input.value = '';
+                renderTags();
+                updateStats();
+            }
+        }
+
+        function addPrefix() {
+            const input = document.getElementById('prefixInput');
+            const value = input.value.trim().toUpperCase();
+            if (value && !prefixes.includes(value)) {
+                prefixes.push(value);
+                input.value = '';
+                renderTags();
+                updateStats();
+            }
+        }
+
+        function bulkAddSites() {
+            const textarea = document.getElementById('bulkSiteInput');
+            const lines = textarea.value.split('\n');
+            let addedCount = 0;
+            
+            lines.forEach(line => {
+                const value = line.trim().toUpperCase();
+                if (value && !sites.includes(value)) {
+                    sites.push(value);
+                    addedCount++;
+                }
+            });
+            
+            if (addedCount > 0) {
+                textarea.value = '';
+                renderTags();
+                updateStats();
+                showMessage(`✅ Added ${addedCount} site(s)`);
+            }
+        }
+
+        function bulkAddPrefixes() {
+            const textarea = document.getElementById('bulkPrefixInput');
+            const lines = textarea.value.split('\n');
+            let addedCount = 0;
+            
+            lines.forEach(line => {
+                const value = line.trim().toUpperCase();
+                if (value && !prefixes.includes(value)) {
+                    prefixes.push(value);
+                    addedCount++;
+                }
+            });
+            
+            if (addedCount > 0) {
+                textarea.value = '';
+                renderTags();
+                updateStats();
+                showMessage(`✅ Added ${addedCount} prefix(es)`);
+            }
+        }
+
+        function removeSite(index) {
+            sites.splice(index, 1);
+            renderTags();
+            updateStats();
+        }
+
+        function removePrefix(index) {
+            prefixes.splice(index, 1);
+            renderTags();
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('siteCount').textContent = sites.length;
+            document.getElementById('prefixCount').textContent = prefixes.length;
+            document.getElementById('totalCount').textContent = sites.length + prefixes.length;
+        }
+
+        document.getElementById('siteInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addSite();
+        });
+
+        document.getElementById('prefixInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addPrefix();
+        });
+
+        function generateScript() {
+            const urgencyReason = document.getElementById('urgencyReason').value.trim() || '1P Threshold';
+            const sitesArray = sites.map(s => `'${s}'`).join(', ');
+            const prefixesArray = prefixes.map(p => `'${p}'`).join(', ');
+
+            generatedScript = `// ==UserScript==
+// @name         Amazon Relay Urgent Site Alert (Trailer Only)
+// @namespace    http://tampermonkey.net/
+// @version      12.7.0
+// @description  In-place notification for urgency: ${urgencyReason} (Trailer work orders only)
+// @author       monimag
+// @match        https://aap-na.corp.amazon.com/*
+// @icon         https://www.google.com/s2/favicons?domain=amazon.com
+// @updateURL    https://raw.githubusercontent.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-/main/urgent-site-alert.user.js
+// @downloadURL  https://raw.githubusercontent.com/monimag1262/URGENCY-NEEDED-Tamper-Monkey-Script-/main/urgent-site-alert.user.js
+// @grant        none
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    const CONFIG = {
+        urgentSites: [${sitesArray}],
+        urgentPrefixes: [${prefixesArray}],
+        checkInterval: 500,
+        maxRetries: 20,
+        debug: true
+    };
+
+    function log(message, data = null) {
+        if (CONFIG.debug) {
+            console.log(\`[🚨 Urgent Alert] \${message}\`, data || '');
+        }
+    }
+
+    function isTrailerPage() {
+        log('🔍 Checking if this is a Trailer page...');
+        const rows = document.querySelectorAll('tr.css-xlf10u');
+        for (let row of rows) {
+            const cells = row.querySelectorAll('th, td');
+            for (let i = 0; i < cells.length - 1; i++) {
+                const headerText = cells[i].textContent.trim();
+                const valueText = cells[i + 1].textContent.trim();
+                if (headerText === 'Asset Type' && valueText === 'Trailer') {
+                    log('✅ Confirmed: This is a Trailer page (found in table)');
+                    return true;
+                }
+            }
+        }
+        log('❌ Not a Trailer page');
+        return false;
+    }
+
+    function getLastYardLocation() {
+        log('Searching for Last Yard Location...');
+        const allElements = Array.from(document.querySelectorAll('p, span, div'));
+        const locationElement = allElements.find(el => {
+            const text = el.textContent.trim();
+            return /^[A-Z]{3,4}[0-9A-Z]*\\s*-\\s*[A-Z0-9]+/.test(text);
+        });
+
+        if (locationElement) {
+            const text = locationElement.textContent.trim();
+            log('✅ Found location via pattern matching:', text);
+            return text;
+        }
+
+        const labels = Array.from(document.querySelectorAll('p, span, div, label'));
+        const locationLabel = labels.find(el => el.textContent.trim() === 'Last Yard Location');
+
+        if (locationLabel) {
+            let valueElement = locationLabel.nextElementSibling;
+            if (!valueElement) {
+                valueElement = locationLabel.parentElement?.nextElementSibling;
+            }
+            if (!valueElement) {
+                const parent = locationLabel.parentElement;
+                const allP = parent?.querySelectorAll('p');
+                if (allP && allP.length > 1) {
+                    valueElement = allP[1];
+                }
+            }
+
+            if (valueElement) {
+                const text = valueElement.textContent.trim();
+                log('✅ Found location via label strategy:', text);
+                return text;
+            }
+        }
+
+        const serviceOverview = Array.from(document.querySelectorAll('div')).find(el =>
+            el.textContent.includes('Last Yard Location')
+        );
+
+        if (serviceOverview) {
+            const paragraphs = serviceOverview.querySelectorAll('p');
+            for (let p of paragraphs) {
+                const text = p.textContent.trim();
+                if (/^[A-Z]{3,4}[0-9A-Z]*/.test(text)) {
+                    log('✅ Found location in Service Overview:', text);
+                    return text;
+                }
+            }
+        }
+
+        log('❌ Could not find Last Yard Location');
+        return null;
+    }
+
+    function isUnassignedWorkOrder() {
+        const allElements = document.querySelectorAll('span, p, div');
+        for (let el of allElements) {
+            if (el.textContent.trim() === 'Unassigned') {
+                log('✅ Work order is unassigned');
+                return true;
+            }
+        }
+        log('Work order is NOT unassigned');
+        return false;
+    }
+
+    function extractSiteCode(locationText) {
+        if (!locationText) return null;
+        const match = locationText.trim().match(/^([A-Z]{3,4}[0-9A-Z]*)/);
+        const code = match ? match[1] : null;
+        log('Extracted site code:', code);
+        return code;
+    }
+
+    function isUrgentSite(siteCode) {
+        if (!siteCode) return false;
+
+        if (CONFIG.urgentSites.includes(siteCode)) {
+            log(\`🚨 URGENT: Exact match found - \${siteCode}\`);
+            return true;
+        }
+
+        const matchedPrefix = CONFIG.urgentPrefixes.find(prefix =>
+            siteCode.startsWith(prefix)
+        );
+
+        if (matchedPrefix) {
+            log(\`🚨 URGENT: Prefix match found - \${siteCode} starts with \${matchedPrefix}\`);
+            return true;
+        }
+
+        log(\`✅ Not urgent: \${siteCode}\`);
+        return false;
+    }
+
+    function findVendorSection() {
+        log('Searching for Vendor section...');
+
+        const allParagraphs = Array.from(document.querySelectorAll('p.css-86vfqe'));
+        const unassignedInVendor = allParagraphs.find(p => {
+            const text = p.textContent.trim();
+            if (text === 'Unassigned') {
+                const parent = p.closest('div.css-1xz1o3r');
+                if (parent) {
+                    const hasEditButton = parent.querySelector('button.css-10ebv51');
+                    if (hasEditButton) {
+                        log('✅ Found Vendor section via Unassigned + Edit button');
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+
+        if (unassignedInVendor) {
+            return unassignedInVendor.closest('tr.css-xlf10u');
+        }
+
+        const allText = Array.from(document.querySelectorAll('*'));
+        const vendorHeader = allText.find(el => {
+            const text = el.textContent.trim();
+            return text === 'Vendor' && el.tagName.toLowerCase() !== 'button';
+        });
+
+        if (vendorHeader) {
+            log('✅ Found "Vendor" header text');
+            let current = vendorHeader;
+            for (let i = 0; i < 10; i++) {
+                current = current.parentElement;
+                if (!current) break;
+
+                const unassignedRow = current.querySelector('tr.css-xlf10u');
+                if (unassignedRow) {
+                    const hasUnassigned = unassignedRow.textContent.includes('Unassigned');
+                    if (hasUnassigned) {
+                        log('✅ Found Vendor section via header navigation');
+                        return unassignedRow;
+                    }
+                }
+            }
+        }
+
+        const serviceOverviewHeaders = Array.from(document.querySelectorAll('h2, h3, div'));
+        const serviceOverview = serviceOverviewHeaders.find(el =>
+            el.textContent.trim() === 'Service Overview'
+        );
+
+        if (serviceOverview) {
+            log('Found Service Overview section');
+            const container = serviceOverview.closest('div');
+            if (container) {
+                const vendorRows = container.querySelectorAll('tr.css-xlf10u');
+                for (let row of vendorRows) {
+                    if (row.textContent.includes('Unassigned') &&
+                        row.querySelector('button.css-10ebv51')) {
+                        log('✅ Found Vendor section in Service Overview');
+                        return row;
+                    }
+                }
+            }
+        }
+
+        log('❌ Could not find Vendor section');
+        return null;
+    }
+
+    function showInPlaceNotification(siteCode) {
+        if (document.getElementById('urgent-site-notification')) {
+            log('Notification already displayed');
+            return;
+        }
+
+        if (!isTrailerPage()) {
+            log('⚠️ Not a Trailer work order - skipping notification');
+            return;
+        }
+
+        log(\`🚨 Showing in-place notification for \${siteCode}\`);
+
+        const vendorRow = findVendorSection();
+
+        if (!vendorRow) {
+            log('❌ Could not find Vendor section, retrying...');
+            setTimeout(() => showInPlaceNotification(siteCode), 1000);
+            return;
+        }
+
+        insertNotification(vendorRow, siteCode);
+    }
+
+    function insertNotification(vendorRow, siteCode) {
+        const notificationRow = document.createElement('tr');
+        notificationRow.id = 'urgent-site-notification';
+        notificationRow.className = 'css-xlf10u';
+
+        const notificationCell = document.createElement('td');
+        notificationCell.setAttribute('colspan', '2');
+        notificationCell.style.cssText = 'padding: 0;';
+
+        const notification = document.createElement('div');
+        notification.style.cssText = \`
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            padding: 16px 20px;
+            margin: 8px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(238, 90, 111, 0.4);
+            border-left: 6px solid #c0392b;
+            animation: slideInNotification 0.4s ease-out, pulseNotification 2s infinite;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        \`;
+
+        notification.innerHTML = \`
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="font-size: 32px; animation: rotateWarning 2s infinite; flex-shrink: 0;">⚠️</div>
+                <div style="flex: 1;">
+                    <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 URGENT TRAILER WORK ORDER - ACTION REQUIRED</div>
+                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">\${siteCode} - ${urgencyReason.toUpperCase()}</div>
+                    <div style="font-size: 13px; opacity: 0.95; line-height: 1.4;">This site requires immediate attention. <strong>Make sure to comment the need of urgency.</strong></div>
+                </div>
+            </div>
+        \`;
+
+        if (!document.getElementById('urgent-notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'urgent-notification-styles';
+            style.textContent = \`
+                @keyframes slideInNotification {
+                    from { transform: translateX(-100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes pulseNotification {
+                    0%, 100% { box-shadow: 0 4px 12px rgba(238, 90, 111, 0.4); }
+                    50% { box-shadow: 0 4px 20px rgba(238, 90, 111, 0.7); }
+                }
+                @keyframes rotateWarning {
+                    0%, 100% { transform: rotate(0deg); }
+                    25% { transform: rotate(-10deg); }
+                    75% { transform: rotate(10deg); }
+                }
+            \`;
+            document.head.appendChild(style);
+        }
+
+        notificationCell.appendChild(notification);
+        notificationRow.appendChild(notificationCell);
+        vendorRow.parentElement.insertBefore(notificationRow, vendorRow.nextSibling);
+
+        log('✅ In-place notification displayed successfully in Vendor section');
+    }
+
+    function removeNotification() {
+        const notification = document.getElementById('urgent-site-notification');
+        if (notification) {
+            notification.style.animation = 'slideInNotification 0.3s ease-in reverse';
+            setTimeout(() => notification.remove(), 300);
+            log('✅ Notification removed (work order assigned)');
+        }
+    }
+
+    let lastCheckedLocation = null;
+    let checkAttempts = 0;
+    let hasTriggered = false;
+
+    function checkForUrgentSite() {
+        log(\`--- Check attempt \${checkAttempts + 1} ---\`);
+
+        if (!isUnassignedWorkOrder()) {
+            if (hasTriggered) {
+                removeNotification();
+                hasTriggered = false;
+            }
+            log('Not an unassigned work order, skipping');
+            return;
+        }
+
+        if (hasTriggered) {
+            log('Already triggered for this work order');
+            return;
+        }
+
+        const locationText = getLastYardLocation();
+        if (!locationText) {
+            checkAttempts++;
+            if (checkAttempts < CONFIG.maxRetries) {
+                log(\`Retrying... (\${checkAttempts}/\${CONFIG.maxRetries})\`);
+                setTimeout(checkForUrgentSite, CONFIG.checkInterval);
+            } else {
+                log('❌ Max retries reached, giving up');
+            }
+            return;
+        }
+
+        checkAttempts = 0;
+
+        if (locationText === lastCheckedLocation) {
+            log('Same location as last check, skipping');
+            return;
+        }
+        lastCheckedLocation = locationText;
+
+        const siteCode = extractSiteCode(locationText);
+
+        if (isUrgentSite(siteCode)) {
+            log(\`🚨🚨🚨 URGENT SITE DETECTED: \${siteCode} 🚨🚨🚨\`);
+            hasTriggered = true;
+            setTimeout(() => showInPlaceNotification(siteCode), 500);
+        }
+    }
+
+    function init() {
+        log('=== Script Initialized (v12.7.0 - Trailer Detection) ===');
+        log('Urgent Sites (Exact Match):', CONFIG.urgentSites);
+        log('Urgent Prefixes:', CONFIG.urgentPrefixes);
+        log('Total Monitoring:', \`\${CONFIG.urgentSites.length} exact + \${CONFIG.urgentPrefixes.length} prefix patterns\`);
+        log('⚠️ TRAILER WORK ORDERS ONLY');
+
+        setTimeout(checkForUrgentSite, 1000);
+
+        const observer = new MutationObserver((mutations) => {
+            const significantChange = mutations.some(m =>
+                m.addedNodes.length > 5 || m.removedNodes.length > 5
+            );
+
+            if (significantChange) {
+                log('Significant DOM change detected');
+                hasTriggered = false;
+                lastCheckedLocation = null;
+                checkAttempts = 0;
+            }
+
+            checkForUrgentSite();
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        log('MutationObserver active');
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+})();`;
+
+            document.getElementById('outputBox').textContent = generatedScript;
+            document.getElementById('outputSection').classList.add('active');
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyScript() {
+            navigator.clipboard.writeText(generatedScript).then(() => {
+                showMessage('✅ Script copied to clipboard!');
+            }).catch(() => {
+                const textArea = document.createElement('textarea');
+                textArea.value = generatedScript;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showMessage('✅ Script copied to clipboard!');
+            });
+        }
+
+        function downloadScript() {
+            const blob = new Blob([generatedScript], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'urgent-site-alert.user.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage('✅ Script downloaded successfully!');
+        }
+
+        function showMessage(text) {
+            const msg = document.getElementById('successMessage');
+            msg.textContent = text;
+            msg.classList.add('show');
+            setTimeout(() => {
+                msg.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize with empty lists (no defaults)
+        updateStats();
+    </script>
+</body>
+</html>
