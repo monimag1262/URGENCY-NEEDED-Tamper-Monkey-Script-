@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Relay Urgent Site Alert
 // @namespace    http://tampermonkey.net/
-// @version      1.29.26
+// @version      1.30.26
 // @description  In-place notification for urgency: 1P Threshold - Yard Capacity
 // @author       monimag
 // @match        https://aap-na.corp.amazon.com/*
@@ -15,7 +15,7 @@
     'use strict';
 
     const CONFIG = {
-        urgentSites: ['ACY9', 'ATL2', 'BOS3', 'BWI4', 'HDC3', 'HGR6', 'HIA1', 'HLO3', 'HSE1', 'JFK8', 'MCI5', 'MDT4', 'MDT9', 'ORH3', 'ORH5', 'PNE5', 'RIC4', 'SBD6', 'SWF1', 'TEB9', 'TLH2', 'TUS5', 'TYS1', 'XLX7'],
+        urgentSites: ['ACY9', 'ATL2', 'AUS2', 'AUS3', 'BDU5', 'BOI2', 'BOS3', 'BWI4', 'GEU3', 'HGR3', 'HGR5', 'HGR6', 'HIA1', 'HLO3', 'HOU9', 'HSE1', 'ILG1', 'JFK8', 'LBB5', 'MCI5', 'MDT4', 'MDT9', 'MGE9', 'PDX9', 'PNE5', 'ORH3', 'ORH5', 'QZZ1', 'RDU1', 'RIC4', 'SAN3', 'SAT3', 'SBD6', 'SWF1', 'TEB9', 'TUS5', 'TYS1', 'ZACY'],
         urgentPrefixes: [],
         checkInterval: 500,
         maxRetries: 20,
